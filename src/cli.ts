@@ -3,6 +3,12 @@ import { existsSync } from 'node:fs'
 import { defineCommand, runMain, showUsage } from 'citty'
 import { consola } from 'consola'
 
+const subCommandNames = new Set([
+  'start', 'stop', 'restart', 'ps', 'health', 'compose', 'logs',
+  'http', 'check', 'browser', 'record', 'replay', 'recordings',
+  'assert', 'init',
+])
+
 const main = defineCommand({
   meta: {
     name: 'qprobe',
@@ -26,7 +32,11 @@ const main = defineCommand({
     assert: () => import('./commands/assert').then((m) => m.default),
     init: () => import('./commands/init').then((m) => m.default),
   },
-  async run({ cmd }) {
+  async run({ cmd, rawArgs }) {
+    // Don't show onboarding if a subcommand was invoked
+    const firstArg = rawArgs[0]
+    if (firstArg && subCommandNames.has(firstArg)) return
+
     const hasConfig =
       existsSync('qprobe.config.ts') ||
       existsSync('qprobe.config.js') ||
