@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { defineCommand, runMain } from 'citty'
+import { existsSync } from 'node:fs'
+import { defineCommand, runMain, showUsage } from 'citty'
+import { consola } from 'consola'
 
 const main = defineCommand({
   meta: {
@@ -23,6 +25,39 @@ const main = defineCommand({
     recordings: () => import('./commands/recordings').then((m) => m.default),
     assert: () => import('./commands/assert').then((m) => m.default),
     init: () => import('./commands/init').then((m) => m.default),
+  },
+  async run({ cmd }) {
+    const hasConfig =
+      existsSync('qprobe.config.ts') ||
+      existsSync('qprobe.config.js') ||
+      existsSync('qprobe.config.mjs')
+
+    if (hasConfig) {
+      await showUsage(cmd)
+      return
+    }
+
+    consola.log('')
+    consola.log(
+      '\x1b[1m\x1b[38;2;183;0;255m  QUESTPIE Probe\x1b[0m  \x1b[2mv0.1.1\x1b[0m',
+    )
+    consola.log('  Dev testing CLI for AI coding agents')
+    consola.log('')
+    consola.log('  \x1b[1mGet started:\x1b[0m')
+    consola.log('')
+    consola.log('    \x1b[36mqprobe init\x1b[0m                          Scaffold qprobe.config.ts')
+    consola.log(
+      '    \x1b[36mbunx skills add questpie/probe\x1b[0m       Teach your AI agent to use Probe',
+    )
+    consola.log('')
+    consola.log('  \x1b[2mOr skip the config and start using it:\x1b[0m')
+    consola.log('')
+    consola.log('    \x1b[36mqprobe start server "bun dev" --ready "ready on" --port 3000\x1b[0m')
+    consola.log('    \x1b[36mqprobe http GET /api/health --status 200\x1b[0m')
+    consola.log('    \x1b[36mqprobe logs server --grep "ERROR"\x1b[0m')
+    consola.log('')
+    consola.log('  \x1b[2mDocs:\x1b[0m \x1b[4mhttps://probe.questpie.com/docs\x1b[0m')
+    consola.log('')
   },
 })
 
