@@ -1,0 +1,87 @@
+---
+title: Browser Drivers
+description: Configure browser automation drivers for QUESTPIE Probe — agent-browser or Playwright.
+---
+
+# Browser Drivers
+
+QUESTPIE Probe uses an adapter pattern for browser automation. Two drivers are supported:
+
+## agent-browser (Default)
+
+[agent-browser](https://github.com/nichochar/agent-browser) is a Rust-based CLI that runs a persistent browser daemon. It is the default driver and is optimized for AI coding agents.
+
+**Key characteristics:**
+- Persistent daemon — the browser stays open between CLI calls
+- Session-based — state (cookies, localStorage) persists across commands
+- Accessibility snapshots — returns structured a11y trees instead of raw HTML (token-efficient)
+- Ref-based targeting — elements are identified by `@ref` numbers from snapshots
+
+```bash
+# Install
+bun add -g agent-browser
+
+# Verify
+agent-browser --version
+```
+
+**How it works:**
+
+```bash
+qprobe browser open http://localhost:3000
+qprobe browser snapshot          # Returns a11y tree with @ref numbers
+qprobe browser click @14         # Click element with ref 14
+qprobe browser fill @7 "hello"   # Fill input at ref 7
+```
+
+## Playwright (Optional)
+
+[Playwright](https://playwright.dev/) is a cross-browser automation library from Microsoft. Use it when you need Firefox/WebKit support or full DOM access.
+
+**Key characteristics:**
+- Cross-browser — Chromium, Firefox, WebKit
+- CSS selector targeting — standard selectors instead of refs
+- No persistent daemon — a new browser context per session
+- Required for `qprobe replay` test execution
+
+```bash
+# Install
+bun add -D @playwright/test
+npx playwright install
+```
+
+## Configuration
+
+Set the driver in `qprobe.config.ts`:
+
+```typescript
+import { defineConfig } from '@questpie/probe'
+
+export default defineConfig({
+  browser: {
+    driver: 'agent-browser', // 'agent-browser' | 'playwright'
+    baseUrl: 'http://localhost:3000',
+    headless: true,
+    session: 'qprobe',
+  },
+})
+```
+
+Or via environment variable:
+
+```bash
+QPROBE_BROWSER_DRIVER=playwright qprobe browser open http://localhost:3000
+```
+
+## Comparison
+
+| Feature | agent-browser | Playwright |
+|---------|--------------|------------|
+| Install | `npm i -g agent-browser` | `npm i -D @playwright/test` |
+| Browsers | Chromium | Chromium, Firefox, WebKit |
+| Targeting | `@ref` numbers | CSS selectors |
+| Persistence | Daemon (survives CLI calls) | Per-session |
+| Snapshots | a11y tree (compact) | Full DOM |
+| Token efficiency | High | Lower |
+| Replay support | No | Yes |
+| Peer dependency | Yes | Optional |

@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "getting-started",
+    "---Commands---",
+    "commands",
+    "---Reference---",
+    "config",
+    "browser-drivers",
+    "exit-codes"
+  ]
+}

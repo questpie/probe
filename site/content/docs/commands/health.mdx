@@ -1,0 +1,38 @@
+---
+title: qprobe health
+description: Poll a URL until it returns a healthy response.
+---
+
+# qprobe health
+
+Poll a URL repeatedly until it returns the expected status code.
+
+```bash
+qprobe health <url> [options]
+```
+
+## Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--interval <duration>` | `2s` | Time between polls |
+| `--timeout <duration>` | `60s` | Max time to wait |
+| `--status <code>` | `200` | Expected HTTP status code |
+
+## Examples
+
+```bash
+# Wait for a server to be healthy
+qprobe health http://localhost:3000/api/health
+
+# Custom interval and timeout
+qprobe health http://localhost:3000/api/health --interval 5s --timeout 120s
+
+# Expect a different status
+qprobe health http://localhost:3000/api/health --status 204
+```
+
+## Exit Codes
+
+- `0` — URL returned expected status
+- `3` — Timed out waiting for healthy response

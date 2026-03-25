@@ -1,0 +1,72 @@
+{
+  "name": "@questpie/probe",
+  "version": "0.1.0",
+  "description": "Dev testing CLI for AI coding agents",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "qprobe": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "skills",
+    "templates"
+  ],
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "biome check .",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "c12": "^2.0.0",
+    "chokidar": "^4.0.0",
+    "citty": "^0.1.0",
+    "consola": "^3.0.0",
+    "defu": "^6.0.0",
+    "ofetch": "^1.0.0",
+    "tinyexec": "^0.3.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/bun": "latest",
+    "tsdown": "^0.9.0",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "agent-browser": ">=0.1.0",
+    "@playwright/test": ">=1.45.0"
+  },
+  "peerDependenciesMeta": {
+    "agent-browser": {
+      "optional": false
+    },
+    "@playwright/test": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "testing",
+    "ai",
+    "agent",
+    "browser-automation",
+    "cli",
+    "dev-tools",
+    "playwright",
+    "questpie"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/questpie/probe"
+  },
+  "author": "QUESTPIE <hello@questpie.com>",
+  "homepage": "https://probe.questpie.com"
+}

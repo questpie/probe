@@ -1,0 +1,28 @@
+---
+title: qprobe ps
+description: List all running processes managed by QUESTPIE Probe.
+---
+
+# qprobe ps
+
+List all managed processes with their status, PID, and port.
+
+```bash
+qprobe ps [--json]
+```
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Output as JSON |
+
+## Examples
+
+```bash
+# Table output
+qprobe ps
+
+# JSON output for scripting
+qprobe ps --json
+```

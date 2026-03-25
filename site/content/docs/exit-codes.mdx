@@ -1,0 +1,35 @@
+---
+title: Exit Codes
+description: QUESTPIE Probe exit codes and their meanings.
+---
+
+# Exit Codes
+
+Every `qprobe` command exits with a numeric code indicating the result.
+
+| Code | Meaning | Example |
+|------|---------|---------|
+| `0` | Success | Command completed without errors |
+| `1` | Assertion or command error | `qprobe assert text "Login"` fails, invalid arguments |
+| `2` | Process timeout | `qprobe start` ready pattern not matched within `--timeout` |
+| `3` | Health check failed | `qprobe health` URL did not return expected status |
+| `4` | Config error | Invalid or missing `qprobe.config.ts` |
+| `5` | Browser driver not found | `agent-browser` or `playwright` CLI not installed |
+| `6` | Replay test failure | `qprobe replay` Playwright tests failed |
+
+## Usage in Scripts
+
+```bash
+qprobe health http://localhost:3000/api/health --timeout 30s
+if [ $? -eq 3 ]; then
+  echo "Server not healthy, aborting"
+  exit 1
+fi
+```
+
+```bash
+qprobe replay "login-flow"
+if [ $? -eq 6 ]; then
+  echo "Regression detected in login flow"
+fi
+```

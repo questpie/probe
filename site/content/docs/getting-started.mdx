@@ -1,0 +1,123 @@
+---
+title: Getting Started
+description: Install QUESTPIE Probe, initialize a project, and run your first commands.
+---
+
+# Getting Started
+
+## Install
+
+```bash
+bun add -g @questpie/probe
+```
+
+Or with other package managers:
+
+```bash
+pnpm add -g @questpie/probe
+bun add -g @questpie/probe
+yarn global add @questpie/probe
+```
+
+## Initialize
+
+Scaffold a `qprobe.config.ts` in your project:
+
+```bash
+qprobe init
+```
+
+This creates a config file with sensible defaults. Edit it to match your stack.
+
+## Quick Example
+
+### 1. Start a dev server
+
+```bash
+qprobe start server "bun dev" --ready "ready on" --port 3000
+```
+
+The CLI spawns the process in the background, watches stdout for the ready pattern, and returns control once the server is up.
+
+### 2. Check health
+
+```bash
+qprobe health http://localhost:3000/api/health
+```
+
+Polls the URL until it returns a 200 status (or times out).
+
+### 3. Make an HTTP request
+
+```bash
+qprobe http GET /api/users --status 200 --jq ".length"
+```
+
+Sends a GET request to `http://localhost:3000/api/users` (baseUrl resolved from config or `--port`), asserts status 200, and prints the array length.
+
+### 4. View logs
+
+```bash
+qprobe logs server --lines 20
+```
+
+Shows the last 20 lines from the server's log file.
+
+### 5. Follow logs in real time
+
+```bash
+qprobe logs server --follow --level error
+```
+
+Streams new log entries, filtered to error level only.
+
+### 6. Stop the server
+
+```bash
+qprobe stop server
+```
+
+Or stop everything:
+
+```bash
+qprobe stop --all
+```
+
+## Using Compose
+
+Define your full stack in `qprobe.config.ts`:
+
+```typescript
+import { defineConfig } from '@questpie/probe'
+
+export default defineConfig({
+  services: {
+    db: {
+      cmd: 'docker compose up postgres',
+      ready: 'ready to accept connections',
+      health: 'http://localhost:5432',
+    },
+    server: {
+      cmd: 'bun dev',
+      ready: 'ready on http://localhost:3000',
+      port: 3000,
+      health: '/api/health',
+      depends: ['db'],
+    },
+  },
+})
+```
+
+Then start everything in dependency order:
+
+```bash
+qprobe compose up
+qprobe compose status
+qprobe compose down
+```
+
+## Next Steps
+
+- [Command Reference](/docs/commands) — Full list of all commands and flags
+- [Configuration](/docs/config) — All config file options
+- [Browser Drivers](/docs/browser-drivers) — Set up browser automation

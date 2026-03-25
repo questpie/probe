@@ -1,0 +1,55 @@
+---
+title: qprobe http
+description: Send HTTP requests with JSON handling, auth, assertions, and jq filtering.
+---
+
+# qprobe http
+
+Send HTTP requests with automatic baseUrl resolution, JSON parsing, status assertions, and jq-style output filtering.
+
+```bash
+qprobe http <METHOD> <path> [options]
+```
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `-d <json>` | Request body (JSON string) |
+| `-H <key:value>` | Add a header (repeatable) |
+| `--token <jwt>` | Set `Authorization: Bearer <jwt>` header |
+| `--status <code>` | Assert the response status code (exit `1` on mismatch) |
+| `--jq <expr>` | Filter response JSON with a jq-style expression |
+| `--raw` | Print raw response body (no formatting) |
+| `-v` | Verbose — show request and response headers |
+
+## Examples
+
+```bash
+# GET request
+qprobe http GET /api/users --status 200
+
+# POST with JSON body
+qprobe http POST /api/users -d '{"name":"test","email":"test@example.com"}'
+
+# With auth token
+qprobe http GET /api/me --token eyJhbGciOiJIUzI1NiJ9...
+
+# Filter response with jq
+qprobe http GET /api/users --jq ".[0].name"
+
+# Custom headers
+qprobe http GET /api/data -H "X-Custom: value"
+
+# Verbose output
+qprobe http POST /api/login -d '{"email":"admin@test.com"}' -v
+```
+
+## Base URL Resolution
+
+The base URL is resolved in this order:
+
+1. If the path starts with `http://` or `https://`, use it as-is
+2. `QPROBE_BASE_URL` environment variable
+3. `http.baseUrl` from `qprobe.config.ts`
+4. Auto-detected from the last `qprobe start --port` command

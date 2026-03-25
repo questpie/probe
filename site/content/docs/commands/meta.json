@@ -1,0 +1,21 @@
+{
+  "title": "Commands",
+  "pages": [
+    "index",
+    "start",
+    "stop",
+    "restart",
+    "ps",
+    "health",
+    "logs",
+    "http",
+    "check",
+    "compose",
+    "browser",
+    "record",
+    "replay",
+    "recordings",
+    "assert",
+    "init"
+  ]
+}

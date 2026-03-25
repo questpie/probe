@@ -1,0 +1,63 @@
+---
+title: Command Reference
+description: Complete reference for all QUESTPIE Probe CLI commands.
+---
+
+# Command Reference
+
+All commands use the `qprobe` CLI prefix.
+
+## Process Management
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe start`](/docs/commands/start) | Start a background process with ready detection |
+| [`qprobe stop`](/docs/commands/stop) | Stop a running process |
+| [`qprobe restart`](/docs/commands/restart) | Restart a process with its original config |
+| [`qprobe ps`](/docs/commands/ps) | List running processes |
+| [`qprobe health`](/docs/commands/health) | Poll a URL until healthy |
+
+## Logs
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe logs`](/docs/commands/logs) | View, filter, and follow process logs |
+
+## HTTP
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe http`](/docs/commands/http) | Send HTTP requests with assertions |
+| [`qprobe check`](/docs/commands/check) | Quick health check on a URL |
+
+## Browser
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe browser`](/docs/commands/browser) | Control a browser — open, click, fill, snapshot, screenshot, eval |
+
+## Recording & Replay
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe record`](/docs/commands/record) | Record browser interactions |
+| [`qprobe replay`](/docs/commands/replay) | Replay recordings as Playwright tests |
+| [`qprobe recordings`](/docs/commands/recordings) | Manage saved recordings |
+
+## Compose
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe compose`](/docs/commands/compose) | Start/stop full stack from config |
+
+## Assertions
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe assert`](/docs/commands/assert) | Assert page content, URL, title, errors |
+
+## Setup
+
+| Command | Description |
+|---------|-------------|
+| [`qprobe init`](/docs/commands/init) | Scaffold a `qprobe.config.ts` |

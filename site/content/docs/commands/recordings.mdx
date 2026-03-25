@@ -1,0 +1,49 @@
+---
+title: qprobe recordings
+description: Manage saved test recordings — list, show, delete, export.
+---
+
+# qprobe recordings
+
+Manage saved recordings in `tests/qprobe/recordings/`.
+
+```bash
+qprobe recordings list
+qprobe recordings show "<name>"
+qprobe recordings delete "<name>"
+qprobe recordings export "<name>"
+```
+
+## Subcommands
+
+### `recordings list`
+
+List all saved recordings.
+
+```bash
+qprobe recordings list
+```
+
+### `recordings show`
+
+Display the actions in a recording.
+
+```bash
+qprobe recordings show "login-flow"
+```
+
+### `recordings delete`
+
+Delete a recording and its generated test file.
+
+```bash
+qprobe recordings delete "login-flow"
+```
+
+### `recordings export`
+
+Export a recording as a standalone Playwright test file.
+
+```bash
+qprobe recordings export "login-flow"
+```

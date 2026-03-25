@@ -1,0 +1,49 @@
+---
+title: qprobe assert
+description: Assert page content, URL, title, status, and absence of errors.
+---
+
+# qprobe assert
+
+Run assertions against the current browser state or last HTTP response. Exits with code `1` on failure.
+
+```bash
+qprobe assert <type> [value]
+```
+
+## Assertion Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `text "<string>"` | Assert text is visible on the page | `qprobe assert text "Welcome"` |
+| `no-text "<string>"` | Assert text is not visible | `qprobe assert no-text "Error"` |
+| `element <selector>` | Assert element exists in DOM | `qprobe assert element "#dashboard"` |
+| `url "<pattern>"` | Assert current URL matches pattern | `qprobe assert url "/dashboard"` |
+| `title "<string>"` | Assert page title | `qprobe assert title "Dashboard"` |
+| `status <code>` | Assert last HTTP response status | `qprobe assert status 200` |
+| `no-errors` | Assert no errors in browser console | `qprobe assert no-errors` |
+| `no-network-errors` | Assert no failed network requests | `qprobe assert no-network-errors` |
+
+## Examples
+
+```bash
+# Check page content
+qprobe assert text "Welcome back"
+qprobe assert no-text "Something went wrong"
+
+# Check navigation
+qprobe assert url "/dashboard"
+qprobe assert title "Dashboard - MyApp"
+
+# Check for errors
+qprobe assert no-errors
+qprobe assert no-network-errors
+
+# Check element exists
+qprobe assert element ".user-avatar"
+```
+
+## Exit Codes
+
+- `0` — Assertion passed
+- `1` — Assertion failed

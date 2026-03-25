@@ -1,0 +1,125 @@
+---
+title: Configuration
+description: Configure QUESTPIE Probe with qprobe.config.ts — services, browser, HTTP, logs, and test settings.
+---
+
+# Configuration
+
+QUESTPIE Probe loads configuration from `qprobe.config.ts` in your project root using [c12](https://github.com/unjs/c12).
+
+Generate a starter config:
+
+```bash
+qprobe init
+```
+
+## Full Example
+
+```typescript
+import { defineConfig } from '@questpie/probe'
+
+export default defineConfig({
+  services: {
+    db: {
+      cmd: 'docker compose up postgres',
+      ready: 'ready to accept connections',
+      health: 'http://localhost:5432',
+      stop: 'docker compose down postgres',
+      timeout: '60s',
+    },
+    server: {
+      cmd: 'bun dev',
+      ready: 'ready on http://localhost:3000',
+      port: 3000,
+      health: '/api/health',
+      depends: ['db'],
+      env: { DATABASE_URL: 'postgresql://localhost:5432/dev' },
+      cwd: './apps/server',
+    },
+    worker: {
+      cmd: 'bun run jobs',
+      ready: 'worker started',
+      depends: ['db'],
+    },
+  },
+  browser: {
+    driver: 'agent-browser',
+    baseUrl: 'http://localhost:3000',
+    headless: true,
+    session: 'qprobe',
+  },
+  http: {
+    baseUrl: 'http://localhost:3000',
+    headers: { 'Content-Type': 'application/json' },
+  },
+  logs: {
+    dir: 'tmp/qprobe/logs',
+    maxSize: '10mb',
+    browserConsole: true,
+  },
+  tests: {
+    dir: 'tests/qprobe',
+    timeout: 30_000,
+  },
+})
+```
+
+## Services
+
+Each key in `services` defines a named process.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cmd` | `string` | — | Shell command to run |
+| `ready` | `string` | — | Regex/string in stdout that signals the process is ready |
+| `port` | `number` | — | Port for health checks and auto baseUrl |
+| `health` | `string` | — | URL or path to health endpoint |
+| `stop` | `string` | — | Custom stop command (default: SIGTERM) |
+| `timeout` | `string` | `"60s"` | Max time to wait for ready pattern |
+| `depends` | `string[]` | `[]` | Services that must start first |
+| `env` | `Record<string, string>` | `{}` | Environment variables |
+| `cwd` | `string` | `"."` | Working directory |
+
+## Browser
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `driver` | `'agent-browser' \| 'playwright'` | `'agent-browser'` | Browser automation driver |
+| `baseUrl` | `string` | — | Default URL for `browser open` |
+| `headless` | `boolean` | `true` | Run browser in headless mode |
+| `session` | `string` | `'qprobe'` | Session name for agent-browser daemon |
+
+## HTTP
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `baseUrl` | `string` | — | Base URL for `qprobe http` requests |
+| `headers` | `Record<string, string>` | `{}` | Default headers for all requests |
+
+## Logs
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `dir` | `string` | `'tmp/qprobe/logs'` | Log file directory |
+| `maxSize` | `string` | `'10mb'` | Max log file size before rotation |
+| `browserConsole` | `boolean` | `true` | Capture browser console output |
+
+## Tests
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `dir` | `string` | `'tests/qprobe'` | Directory for recordings and generated tests |
+| `timeout` | `number` | `30000` | Default test timeout in ms |
+
+## Environment Variables
+
+Override config values via environment variables:
+
+| Variable | Overrides |
+|----------|-----------|
+| `QPROBE_CONFIG` | Config file path (default: `qprobe.config.ts`) |
+| `QPROBE_BASE_URL` | `http.baseUrl` |
+| `QPROBE_BROWSER_DRIVER` | `browser.driver` |
+| `QPROBE_LOG_DIR` | `logs.dir` |
+| `QPROBE_HEADLESS` | `browser.headless` (`"true"` or `"false"`) |
+| `QPROBE_TIMEOUT` | Default timeout for commands |

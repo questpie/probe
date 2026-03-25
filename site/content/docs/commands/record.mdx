@@ -1,0 +1,65 @@
+---
+title: qprobe record
+description: Record browser interactions for replay as Playwright tests.
+---
+
+# qprobe record
+
+Record browser interactions as a named session. Recorded actions are saved as JSON and can be converted to Playwright test files.
+
+```bash
+qprobe record start "<name>"
+qprobe record stop
+qprobe record cancel
+```
+
+## Subcommands
+
+### `record start`
+
+Begin recording all browser commands.
+
+```bash
+qprobe record start "login-flow"
+```
+
+After starting a recording, all `qprobe browser` commands are captured.
+
+### `record stop`
+
+Stop recording and save the session.
+
+```bash
+qprobe record stop
+```
+
+Saves to `tests/qprobe/recordings/<name>.json` and generates `tests/qprobe/recordings/<name>.spec.ts`.
+
+### `record cancel`
+
+Discard the current recording.
+
+```bash
+qprobe record cancel
+```
+
+## Example Workflow
+
+```bash
+# Start recording
+qprobe record start "create-user"
+
+# Perform actions
+qprobe browser open http://localhost:3000
+qprobe browser click @5
+qprobe browser fill @8 "Jane Doe"
+qprobe browser fill @9 "jane@example.com"
+qprobe browser click @12
+qprobe browser wait --text "User created"
+
+# Stop and save
+qprobe record stop
+
+# Replay later
+qprobe replay "create-user"
+```

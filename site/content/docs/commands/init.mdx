@@ -1,0 +1,41 @@
+---
+title: qprobe init
+description: Scaffold a qprobe.config.ts configuration file in your project.
+---
+
+# qprobe init
+
+Generate a starter `qprobe.config.ts` in the current directory.
+
+```bash
+qprobe init
+```
+
+## What It Creates
+
+A `qprobe.config.ts` file with example service definitions and default settings:
+
+```typescript
+import { defineConfig } from '@questpie/probe'
+
+export default defineConfig({
+  services: {
+    server: {
+      cmd: 'npm run dev',
+      ready: 'ready on',
+      port: 3000,
+      health: '/api/health',
+    },
+  },
+  browser: {
+    driver: 'agent-browser',
+    baseUrl: 'http://localhost:3000',
+    headless: true,
+  },
+  http: {
+    baseUrl: 'http://localhost:3000',
+  },
+})
+```
+
+It also creates the `tmp/qprobe/` directory structure and adds it to `.gitignore` if not already present.

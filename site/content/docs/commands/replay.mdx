@@ -1,0 +1,45 @@
+---
+title: qprobe replay
+description: Replay recorded sessions as Playwright tests.
+---
+
+# qprobe replay
+
+Run a recorded session as a Playwright test. Requires `@playwright/test` as a peer dependency.
+
+```bash
+qprobe replay "<name>" [options]
+qprobe replay --all [options]
+```
+
+## Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--headed` | `false` | Run browser in headed mode |
+| `--browser <name>` | `chromium` | Browser to use (`chromium`, `firefox`, `webkit`) |
+| `--parallel` | `false` | Run multiple recordings in parallel |
+| `--report` | `false` | Generate an HTML test report |
+| `--retries <n>` | `0` | Number of retries on failure |
+| `--all` | `false` | Replay all recordings |
+
+## Examples
+
+```bash
+# Replay a single recording
+qprobe replay "login-flow"
+
+# Replay all recordings
+qprobe replay --all
+
+# Headed mode with retries
+qprobe replay "login-flow" --headed --retries 2
+
+# Generate a report
+qprobe replay --all --report
+```
+
+## Exit Codes
+
+- `0` — All tests passed
+- `6` — One or more tests failed

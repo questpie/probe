@@ -1,0 +1,140 @@
+---
+title: qprobe browser
+description: Control a browser — open pages, click elements, fill forms, take snapshots and screenshots.
+---
+
+# qprobe browser
+
+Drive a browser session for testing web applications. Supports navigation, interaction, inspection, and assertions.
+
+## Navigation
+
+```bash
+qprobe browser open <url>
+qprobe browser back
+qprobe browser forward
+qprobe browser reload
+qprobe browser close
+qprobe browser url
+qprobe browser title
+```
+
+## Snapshots & Screenshots
+
+```bash
+qprobe browser snapshot [options]
+qprobe browser screenshot [path] [options]
+```
+
+### snapshot
+
+Returns an accessibility tree of the current page. Elements are labeled with `@ref` numbers for targeting.
+
+| Flag | Description |
+|------|-------------|
+| `-i` | Include invisible elements |
+| `-c` | Include computed styles |
+| `-d <n>` | Max depth |
+| `-s <css>` | Scope to a CSS selector |
+| `--diff` | Show structural diff against the previous snapshot |
+
+### screenshot
+
+Capture the page as a PNG image.
+
+| Flag | Description |
+|------|-------------|
+| `--annotate` | Overlay ref numbers on interactive elements |
+| `--full` | Full page screenshot (not just viewport) |
+| `--selector <css>` | Capture only a specific element |
+
+## Interaction
+
+```bash
+qprobe browser click <ref|selector>
+qprobe browser fill <ref|selector> "<value>"
+qprobe browser select <ref|selector> "<value>"
+qprobe browser press <key>
+qprobe browser type "<text>"
+```
+
+Target elements using `@ref` numbers from snapshots or CSS selectors.
+
+```bash
+# Click by ref
+qprobe browser click @14
+
+# Click by selector
+qprobe browser click "#login-button"
+
+# Fill an input
+qprobe browser fill @7 "user@example.com"
+
+# Press a key
+qprobe browser press Enter
+
+# Type text character by character
+qprobe browser type "Hello, world"
+```
+
+## Inspection
+
+```bash
+qprobe browser console [--level <lvl>] [--clear] [--json]
+qprobe browser errors [--clear]
+qprobe browser network [--failed] [--method <m>] [--grep "<pat>"] [--json]
+qprobe browser text [selector]
+qprobe browser eval "<js>"
+```
+
+### console
+
+Show browser console output.
+
+| Flag | Description |
+|------|-------------|
+| `--level <level>` | Filter by level (`log`, `warn`, `error`) |
+| `--clear` | Clear console history after reading |
+| `--json` | Output as JSON |
+
+### network
+
+Show network requests.
+
+| Flag | Description |
+|------|-------------|
+| `--failed` | Show only failed requests |
+| `--method <method>` | Filter by HTTP method |
+| `--grep "<pattern>"` | Filter by URL pattern |
+| `--json` | Output as JSON |
+
+### eval
+
+Execute JavaScript in the browser context and print the result.
+
+```bash
+qprobe browser eval "document.title"
+qprobe browser eval "document.querySelectorAll('li').length"
+```
+
+## Waiting
+
+```bash
+qprobe browser wait <ref|selector|--url|--text|--network> [--timeout <dur>]
+```
+
+Wait for an element, URL change, text content, or network request.
+
+```bash
+# Wait for an element
+qprobe browser wait "#dashboard"
+
+# Wait for a URL
+qprobe browser wait --url "/dashboard"
+
+# Wait for text
+qprobe browser wait --text "Welcome"
+
+# Wait for a network request
+qprobe browser wait --network "/api/users"
+```

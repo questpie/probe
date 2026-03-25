@@ -1,0 +1,36 @@
+---
+title: qprobe stop
+description: Stop a running process managed by QUESTPIE Probe.
+---
+
+# qprobe stop
+
+Stop a running process by name, or stop all managed processes.
+
+```bash
+qprobe stop <name>
+qprobe stop --all
+```
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--all` | Stop all managed processes |
+
+## Examples
+
+```bash
+# Stop a specific process
+qprobe stop server
+
+# Stop everything
+qprobe stop --all
+```
+
+## Behavior
+
+1. Reads the PID from `tmp/qprobe/pids/<name>.pid`
+2. Sends SIGTERM to the process
+3. If the service has a custom `stop` command in config, runs that instead
+4. Cleans up the PID file

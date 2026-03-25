@@ -1,0 +1,44 @@
+---
+title: qprobe start
+description: Start a background process with ready detection and log capture.
+---
+
+# qprobe start
+
+Start a named background process. The CLI spawns the command, watches stdout for a ready pattern, and returns control once the process is up.
+
+```bash
+qprobe start <name> "<cmd>" [options]
+```
+
+## Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--ready "<pattern>"` | — | String or regex in stdout that signals ready state |
+| `--timeout <duration>` | `60s` | Max time to wait for ready pattern |
+| `--port <number>` | — | Port for health checks and auto baseUrl |
+| `--env KEY=VAL` | — | Environment variables (repeatable) |
+| `--cwd <path>` | `.` | Working directory |
+
+## Examples
+
+```bash
+# Start a database
+qprobe start db "docker compose up postgres" --ready "ready to accept" --timeout 30s
+
+# Start a dev server
+qprobe start server "bun dev" --ready "ready on" --port 3000
+
+# Start with env vars
+qprobe start server "bun dev" --ready "ready on" --port 3000 --env DATABASE_URL=postgresql://localhost/dev
+```
+
+## Behavior
+
+1. Spawns a detached child process
+2. Pipes stdout/stderr to `tmp/qprobe/logs/<name>.log` (timestamped, level-parsed)
+3. Monitors stdout for `--ready` pattern match
+4. Returns when ready or exits with code `2` on timeout
+5. Saves PID to `tmp/qprobe/pids/<name>.pid`
+6. Process survives between CLI calls (daemon pattern)

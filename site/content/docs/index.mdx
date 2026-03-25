@@ -1,0 +1,74 @@
+---
+title: Introduction
+description: QUESTPIE Probe is a dev testing CLI for AI coding agents. Orchestrate dev servers, aggregate logs, control browsers, send HTTP requests, record and replay tests.
+---
+
+# Introduction
+
+QUESTPIE Probe (`@questpie/probe`) is a dev testing CLI designed for AI coding agents. It provides a unified interface to manage development infrastructure and verify application behavior — all from the terminal.
+
+The CLI command is `qprobe`.
+
+## What It Does
+
+**Process Management** — Start, stop, and monitor dev servers and background services. Ready detection via stdout pattern matching. Processes survive between CLI calls via PID files.
+
+```bash
+qprobe start server "bun dev" --ready "ready on" --port 3000
+qprobe ps
+```
+
+**Log Aggregation** — Timestamped, level-parsed logs for every managed process. Filter by grep pattern, log level, or time range. Follow mode for real-time streaming.
+
+```bash
+qprobe logs server --follow --level error
+qprobe logs --all --grep "connection refused"
+```
+
+**HTTP Requests** — Built-in HTTP client with baseUrl resolution, JSON handling, JWT auth, jq-style filtering, and status assertions.
+
+```bash
+qprobe http GET /api/users --status 200
+qprobe http POST /api/users -d '{"name":"test"}' --jq ".id"
+```
+
+**Browser Control** — Drive a browser via accessibility snapshots (token-efficient) or Playwright. Click, fill, screenshot, evaluate JS, inspect console/network.
+
+```bash
+qprobe browser open http://localhost:3000
+qprobe browser snapshot
+qprobe browser click "Login"
+```
+
+**Test Recording & Replay** — Record browser interactions as JSON, generate Playwright test files, replay them for regression testing. Zero AI tokens on replay.
+
+```bash
+qprobe record start "login-flow"
+# ... interact with the browser ...
+qprobe record stop
+qprobe replay "login-flow"
+```
+
+**Compose** — Define services with dependencies in `qprobe.config.ts`. Start/stop the full stack in dependency order with health checks.
+
+```bash
+qprobe compose up
+qprobe compose status
+qprobe compose down
+```
+
+## Install
+
+```bash
+bun add -g @questpie/probe
+```
+
+## Quick Start
+
+```bash
+qprobe init
+qprobe start server "bun dev" --ready "ready on" --port 3000
+qprobe health http://localhost:3000/api/health
+qprobe http GET /api/users --status 200
+qprobe logs server --lines 50
+```

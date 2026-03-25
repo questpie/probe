@@ -1,0 +1,45 @@
+---
+title: qprobe logs
+description: View, filter, and follow process logs.
+---
+
+# qprobe logs
+
+Read logs from managed processes. Supports filtering by level, grep pattern, time range, and real-time follow mode.
+
+```bash
+qprobe logs <name> [options]
+qprobe logs --all [options]
+qprobe logs --unified
+```
+
+## Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--follow` | `false` | Stream new log entries in real time |
+| `--lines <n>` | `100` | Number of lines to show |
+| `--grep "<pattern>"` | — | Filter lines matching a regex pattern |
+| `--level <level>` | — | Filter by log level (`debug`, `info`, `warn`, `error`) |
+| `--since <duration>` | — | Show logs from the last N seconds/minutes/hours |
+| `--all` | `false` | Show logs from all processes |
+| `--unified` | `false` | Interleave all process logs by timestamp |
+
+## Examples
+
+```bash
+# Last 50 lines from server
+qprobe logs server --lines 50
+
+# Follow server logs, errors only
+qprobe logs server --follow --level error
+
+# Grep across all processes
+qprobe logs --all --grep "connection refused"
+
+# Logs from the last 5 minutes
+qprobe logs server --since 5m
+
+# Unified view of all logs
+qprobe logs --unified
+```

@@ -1,0 +1,27 @@
+---
+title: qprobe check
+description: Quick health check on a URL or the configured base URL.
+---
+
+# qprobe check
+
+Perform a quick health check on a URL. Simpler than `qprobe health` — single request, no polling.
+
+```bash
+qprobe check [url]
+```
+
+## Examples
+
+```bash
+# Check a specific URL
+qprobe check http://localhost:3000/api/health
+
+# Check the configured baseUrl
+qprobe check
+```
+
+## Exit Codes
+
+- `0` — URL is reachable and returned a success status
+- `1` — URL is unreachable or returned an error status
