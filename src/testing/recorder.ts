@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { loadProbeConfig } from '../core/config'
@@ -38,7 +39,15 @@ export async function startRecording(name: string): Promise<void> {
 }
 
 export function recordAction(command: string, args: string[]): void {
-  if (!activeRecording) return
+  // Load from disk if not in memory (each CLI call is a separate process)
+  if (!activeRecording) {
+    try {
+      const content = readFileSync(STATE_FILE, 'utf-8')
+      activeRecording = JSON.parse(content) as Recording
+    } catch {
+      return // no active recording
+    }
+  }
   activeRecording.actions.push({
     command,
     args,

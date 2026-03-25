@@ -3,8 +3,13 @@ import { defineCommand } from 'citty'
 import { loadProbeConfig, resolveBaseUrl } from '../core/config'
 import type { BrowserDriver } from '../browser/types'
 import { AgentBrowserDriver } from '../browser/agent-browser'
+import { recordAction } from '../testing/recorder'
 import { error, info, json as jsonOut, log, success } from '../utils/output'
 import { parseDuration } from '../utils/duration'
+
+function record(command: string, ...args: string[]): void {
+  recordAction(`browser ${command}`, args)
+}
 
 async function getDriver(args: {
   driver?: string
@@ -39,6 +44,7 @@ const open = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.open(args.url)
+    record('open', args.url)
     success(`Opened ${args.url}`)
   },
 }) as CommandDef
@@ -53,6 +59,7 @@ const back = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.back()
+    record('back')
     success('Navigated back')
   },
 }) as CommandDef
@@ -67,6 +74,7 @@ const forward = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.forward()
+    record('forward')
     success('Navigated forward')
   },
 }) as CommandDef
@@ -81,6 +89,7 @@ const reload = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.reload()
+    record('reload')
     success('Reloaded')
   },
 }) as CommandDef
@@ -165,6 +174,7 @@ const click = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.click(args.ref)
+    record('click', args.ref)
     success(`Clicked ${args.ref}`)
   },
 }) as CommandDef
@@ -180,6 +190,7 @@ const dblclick = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.dblclick(args.ref)
+    record('dblclick', args.ref)
     success(`Double-clicked ${args.ref}`)
   },
 }) as CommandDef
@@ -196,6 +207,7 @@ const fill = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.fill(args.ref, args.value)
+    record('fill', args.ref, args.value)
     success(`Filled ${args.ref}`)
   },
 }) as CommandDef
@@ -212,6 +224,7 @@ const selectCmd = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.select(args.ref, args.value)
+    record('select', args.ref, args.value)
     success(`Selected "${args.value}" in ${args.ref}`)
   },
 }) as CommandDef
@@ -227,6 +240,7 @@ const checkCmd = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.check(args.ref)
+    record('check', args.ref)
     success(`Checked ${args.ref}`)
   },
 }) as CommandDef
@@ -242,6 +256,7 @@ const uncheckCmd = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.uncheck(args.ref)
+    record('uncheck', args.ref)
     success(`Unchecked ${args.ref}`)
   },
 }) as CommandDef
@@ -257,6 +272,7 @@ const press = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.press(args.key)
+    record('press', args.key)
     success(`Pressed ${args.key}`)
   },
 }) as CommandDef
@@ -272,6 +288,7 @@ const typeCmd = defineCommand({
   async run({ args }) {
     const driver = await getDriver(args)
     await driver.type(args.text)
+    record('type', args.text)
     success('Typed text')
   },
 }) as CommandDef
@@ -359,6 +376,7 @@ const screenshot = defineCommand({
       full: args.full,
       selector: args.selector,
     })
+    record('screenshot', path)
     success(`Screenshot saved: ${path}`)
   },
 }) as CommandDef
