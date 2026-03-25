@@ -5,27 +5,16 @@ description: Configure browser automation drivers for QUESTPIE Probe — agent-b
 
 # Browser Drivers
 
-QUESTPIE Probe uses an adapter pattern for browser automation. Two drivers are supported:
+QUESTPIE Probe uses an adapter pattern for browser automation. Both drivers are installed automatically as peer dependencies.
 
 ## agent-browser (Default)
 
-[agent-browser](https://github.com/nichochar/agent-browser) is a Rust-based CLI that runs a persistent browser daemon. It is the default driver and is optimized for AI coding agents.
+[agent-browser](https://github.com/nichochar/agent-browser) by Vercel Labs is a Rust-based CLI that runs a persistent browser daemon. Default driver, optimized for AI coding agents.
 
-**Key characteristics:**
-- Persistent daemon — the browser stays open between CLI calls
-- Session-based — state (cookies, localStorage) persists across commands
-- Accessibility snapshots — returns structured a11y trees instead of raw HTML (token-efficient)
-- Ref-based targeting — elements are identified by `@ref` numbers from snapshots
-
-```bash
-# Install
-bun add -g agent-browser
-
-# Verify
-agent-browser --version
-```
-
-**How it works:**
+- Persistent daemon — browser stays open between CLI calls
+- Session-based — cookies and localStorage persist across commands
+- Accessibility snapshots — structured a11y trees instead of raw HTML (token-efficient)
+- Ref-based targeting — elements identified by `@ref` numbers from snapshots
 
 ```bash
 qprobe browser open http://localhost:3000
@@ -34,21 +23,14 @@ qprobe browser click @14         # Click element with ref 14
 qprobe browser fill @7 "hello"   # Fill input at ref 7
 ```
 
-## Playwright (Optional)
+## Playwright
 
-[Playwright](https://playwright.dev/) is a cross-browser automation library from Microsoft. Use it when you need Firefox/WebKit support or full DOM access.
+[Playwright](https://playwright.dev/) by Microsoft provides cross-browser automation and test execution. Used by `qprobe replay` to run recorded tests.
 
-**Key characteristics:**
 - Cross-browser — Chromium, Firefox, WebKit
 - CSS selector targeting — standard selectors instead of refs
-- No persistent daemon — a new browser context per session
-- Required for `qprobe replay` test execution
-
-```bash
-# Install
-bun add -D @playwright/test
-npx playwright install
-```
+- Powers `qprobe replay` test execution
+- Install browsers after first install: `bunx playwright install`
 
 ## Configuration
 

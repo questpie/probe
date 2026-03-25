@@ -11,7 +11,7 @@ Dev testing CLI for AI coding agents. Orchestrates dev servers, aggregates logs,
 bun add -g @questpie/probe
 
 # Install the AI skill (for Claude Code, Cursor, Windsurf)
-npx skills add questpie/probe
+bunx skills add questpie/probe
 ```
 
 ## Quick Start

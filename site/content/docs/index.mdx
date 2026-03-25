@@ -64,7 +64,7 @@ qprobe compose down
 bun add -g @questpie/probe
 
 # Install the AI skill (for Claude Code, Cursor, Windsurf)
-npx skills add questpie/probe
+bunx skills add questpie/probe
 ```
 
 ## Quick Start
@@ -76,3 +76,21 @@ qprobe health http://localhost:3000/api/health
 qprobe http GET /api/users --status 200
 qprobe logs server --lines 50
 ```
+
+## Built With
+
+QUESTPIE Probe is built on top of great open source projects:
+
+| Package | Role |
+|---------|------|
+| [citty](https://github.com/unjs/citty) | CLI framework |
+| [c12](https://github.com/unjs/c12) | Config loading (`qprobe.config.ts`) |
+| [consola](https://github.com/unjs/consola) | Console output |
+| [ofetch](https://github.com/unjs/ofetch) | HTTP client |
+| [defu](https://github.com/unjs/defu) | Object merging |
+| [tinyexec](https://github.com/tinylibs/tinyexec) | Child process spawning |
+| [chokidar](https://github.com/paulmillr/chokidar) | File watching (log follow) |
+| [agent-browser](https://github.com/nichochar/agent-browser) | Browser automation (default driver) |
+| [@playwright/test](https://playwright.dev/) | Test replay & cross-browser (optional) |
+| [tsdown](https://github.com/nicolo-ribaudo/tsdown) | Build (Rolldown + Oxc) |
+| [Biome](https://biomejs.dev/) | Lint & format |

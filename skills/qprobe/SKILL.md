@@ -8,7 +8,7 @@ description: "QUESTPIE Probe — dev testing CLI for AI coding agents. Orchestra
 Dev testing CLI. Manages dev servers, reads logs, controls browsers, sends HTTP requests, records and replays tests.
 
 **Install CLI:** `bun add -g @questpie/probe`
-**Install skill:** `npx skills add questpie/probe`
+**Install skill:** `bunx skills add questpie/probe`
 
 ## Core Principle
 
