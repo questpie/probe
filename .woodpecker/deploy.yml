@@ -1,0 +1,18 @@
+when:
+  branch: main
+  event: push
+  path: "site/**"
+
+steps:
+  build:
+    image: woodpeckerci/plugin-docker-buildx:6
+    settings:
+      daemon_off: true
+      repo: questpie/probe-docs
+      tags: latest
+      dockerfile: site/Dockerfile
+      context: site/
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
