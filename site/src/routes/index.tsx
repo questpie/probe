@@ -107,7 +107,7 @@ function Terminal() {
   }, [visible])
 
   return (
-    <div style={{ background: S.card, border: `1px solid ${S.border}`, display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+    <div style={{ background: S.card, border: `1px solid ${S.border}`, display: 'flex', flexDirection: 'column', height: 380 }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: `1px solid ${S.border}`, gap: 8, flexShrink: 0 }}>
         <div style={{ width: 8, height: 8, background: '#FF3D57' }} />
         <div style={{ width: 8, height: 8, background: '#FFB300' }} />
