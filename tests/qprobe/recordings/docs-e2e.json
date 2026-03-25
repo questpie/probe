@@ -1,0 +1,35 @@
+{
+  "name": "docs-e2e",
+  "startedAt": "2026-03-25T19:32:01.216Z",
+  "actions": [
+    {
+      "command": "browser open",
+      "args": [
+        "http://localhost:3200/docs"
+      ],
+      "timestamp": "2026-03-25T19:32:01.994Z"
+    },
+    {
+      "command": "browser click",
+      "args": [
+        "e35"
+      ],
+      "timestamp": "2026-03-25T19:32:11.912Z"
+    },
+    {
+      "command": "browser click",
+      "args": [
+        "e18"
+      ],
+      "timestamp": "2026-03-25T19:32:35.997Z"
+    },
+    {
+      "command": "browser open",
+      "args": [
+        "http://localhost:3200/docs/commands/http"
+      ],
+      "timestamp": "2026-03-25T19:32:49.113Z"
+    }
+  ],
+  "finishedAt": "2026-03-25T19:33:30.730Z"
+}
