@@ -6,7 +6,7 @@ import { consola } from 'consola'
 const main = defineCommand({
   meta: {
     name: 'qprobe',
-    version: '0.1.1',
+    version: '0.1.2',
     description: 'Dev testing CLI for AI coding agents',
   },
   subCommands: {
@@ -39,7 +39,7 @@ const main = defineCommand({
 
     consola.log('')
     consola.log(
-      '\x1b[1m\x1b[38;2;183;0;255m  QUESTPIE Probe\x1b[0m  \x1b[2mv0.1.1\x1b[0m',
+      '\x1b[1m\x1b[38;2;183;0;255m  QUESTPIE Probe\x1b[0m  \x1b[2mv0.1.2\x1b[0m',
     )
     consola.log('  Dev testing CLI for AI coding agents')
     consola.log('')
