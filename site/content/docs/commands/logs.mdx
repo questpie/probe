@@ -15,31 +15,55 @@ qprobe logs --unified
 
 ## Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--follow` | `false` | Stream new log entries in real time |
-| `--lines <n>` | `100` | Number of lines to show |
-| `--grep "<pattern>"` | — | Filter lines matching a regex pattern |
-| `--level <level>` | — | Filter by log level (`debug`, `info`, `warn`, `error`) |
-| `--since <duration>` | — | Show logs from the last N seconds/minutes/hours |
-| `--all` | `false` | Show logs from all processes |
-| `--unified` | `false` | Interleave all process logs by timestamp |
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--follow` | `-f` | `false` | Stream new log entries in real time (blocks until Ctrl+C) |
+| `--lines` | `-n` | `50` | Number of recent lines to show |
+| `--grep` | | — | Case-insensitive regex filter on message text |
+| `--level` | | — | Exact level filter: `debug`, `info`, `warn`, `error` |
+| `--since` | | — | Time range filter: `30s`, `5m`, `1h` |
+| `--all` | | `false` | Merge logs from all processes, sorted by timestamp |
+| `--unified` | | `false` | All processes + browser log, interleaved |
+| `--json` | | `false` | Output as JSON array |
+
+## Output Format
+
+Single process:
+```
+2026-03-25T20:30:15.247Z INFO  Server ready on http://localhost:3000
+2026-03-25T20:30:16.103Z ERROR Connection refused to database
+```
+
+With `--all` or `--unified`:
+```
+[server] 2026-03-25T20:30:15.247Z INFO  Server ready on http://localhost:3000
+[db]     2026-03-25T20:30:14.892Z INFO  PostgreSQL ready to accept connections
+```
 
 ## Examples
 
 ```bash
-# Last 50 lines from server
-qprobe logs server --lines 50
+# Last 50 lines from server (default)
+qprobe logs server
 
-# Follow server logs, errors only
-qprobe logs server --follow --level error
+# Only errors
+qprobe logs server --level error
+
+# Regex search (case-insensitive)
+qprobe logs server --grep "connection|timeout|refused"
+
+# Errors from the last 5 minutes
+qprobe logs server --level error --since 5m
+
+# Follow server logs in real time, errors only
+qprobe logs server -f --level error
 
 # Grep across all processes
-qprobe logs --all --grep "connection refused"
-
-# Logs from the last 5 minutes
-qprobe logs server --since 5m
+qprobe logs --all --grep "ECONNREFUSED"
 
 # Unified view of all logs
 qprobe logs --unified
+
+# JSON output for scripting
+qprobe logs server --json --lines 200
 ```

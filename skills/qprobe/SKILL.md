@@ -97,6 +97,104 @@ qprobe stop --all                            # or: qprobe compose down
 
 ---
 
+## Debugging Workflow
+
+When something doesn't work — don't jump to browser. Triage in this order:
+
+### 1. Is it running?
+```bash
+qprobe ps
+qprobe check
+```
+
+### 2. Check logs for errors
+```bash
+qprobe logs server --level error
+qprobe logs --all --grep "Error|fail|crash" --since 10m
+```
+
+### 3. Test API directly
+```bash
+qprobe http GET /api/health --status 200
+qprobe http GET /api/<endpoint> -v              # verbose: see full request/response
+```
+
+### 4. Browser only if UI bug
+```bash
+qprobe browser open <url>
+qprobe browser console --level error            # JS errors?
+qprobe browser network --failed                 # failed requests?
+qprobe browser snapshot -i                      # what does the page show?
+```
+
+### 5. Fix → restart → verify → record
+```bash
+qprobe restart server
+qprobe logs server --level error --since 1m     # should be empty now
+qprobe record start "fix-<issue>"
+# (re-run the verification steps that failed before)
+qprobe assert no-errors
+qprobe record stop
+qprobe replay "fix-<issue>"                     # MUST pass
+```
+
+### Exit Codes
+
+| Code | Meaning | What to do |
+|------|---------|------------|
+| 0 | Success | Continue |
+| 1 | Assertion/command error | Read the output message |
+| 2 | Process timeout | Ready pattern not matched — check logs, increase `--timeout` |
+| 3 | Health check failed | Server not responding — check if process is running |
+| 4 | Config error | Check `qprobe.config.ts` syntax |
+| 5 | Browser driver missing | Install: `bun add -g agent-browser` |
+| 6 | Replay test failure | Regression — check what changed in code |
+
+---
+
+## Shipping a Feature
+
+A feature is **NOT done** until its replay passes.
+
+### 1. Plan what to test
+
+Before writing any test, identify:
+- What are the **critical user flows** for this feature?
+- What are the **edge cases**? (empty state, validation errors, permissions)
+- What **API endpoints** does it touch?
+
+If unclear — **ask the user** for their expected flows and scenarios.
+
+### 2. Verify with logs + API first
+```bash
+qprobe logs server --level error                # no errors after change
+qprobe http GET /api/<endpoint> --status 200    # API works
+```
+
+### 3. Record each user flow
+```bash
+# For each critical flow:
+qprobe record start "<feature>-<flow-name>"
+qprobe browser open <start-url>
+# (interact: fill, click, navigate)
+qprobe assert no-errors
+qprobe assert no-network-errors
+qprobe record stop
+```
+
+### 4. Replay ALL — must pass
+```bash
+qprobe replay --all
+# If any replay fails → fix and re-record that flow
+```
+
+### 5. Feature is shippable when:
+- All **existing replays** still pass (no regressions)
+- All **new feature flows** are recorded and pass
+- **No JS errors**, no network errors
+
+---
+
 ## Command Reference
 
 | Command | Purpose | When to use |
@@ -120,13 +218,15 @@ qprobe stop --all                            # or: qprobe compose down
 
 Read the reference file for the command group you need:
 
-- **Process management** → `references/process.md`
+- **Process management** (start, stop, ps, health, restart) → `references/process.md`
+- **Logs** (read, filter, grep, follow, merge) → `references/logs.md`
 - **HTTP requests & API testing** → `references/http.md`
-- **Browser control** → `references/browser.md`
-- **Service orchestration** → `references/compose.md`
-- **Recording & replay** → `references/recording.md`
-- **UX testing methods** → `references/ux.md`
-- **Assertions** → `references/assertions.md`
+- **Quick health check** (one-shot status + services) → `references/check.md`
+- **Browser control** (snapshot, click, fill, console, network) → `references/browser.md`
+- **Service orchestration** (compose up/down, dependencies) → `references/compose.md`
+- **Recording & replay** (test capture, Playwright codegen) → `references/recording.md`
+- **Assertions** (text, element, URL, status, errors) → `references/assertions.md`
+- **UX testing methods** (heuristics, task completion, a11y) → `references/ux.md`
 
 ## Tips
 

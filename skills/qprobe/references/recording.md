@@ -184,6 +184,47 @@ tests/qprobe/
 └── playwright.config.ts        # auto-generated
 ```
 
+## Edge Cases
+
+### Stale recording from a previous session
+If a recording was started but the CLI process was interrupted (Ctrl+C, crash, terminal closed), the state file persists on disk.
+
+Next `qprobe record start` will detect it:
+```
+Already recording "old-name" (started 45m ago).
+Run "qprobe record stop" or "qprobe record cancel" first.
+```
+
+Fix: `qprobe record cancel`
+
+### Starting when one is already active
+```
+Already recording "login-flow".
+Run "qprobe record stop" or "qprobe record cancel" first.
+```
+
+Always cancel or stop before starting a new recording.
+
+### Error during recording
+If a browser command fails during recording, the recording **continues**. The failed action is still captured. Stop or cancel when ready.
+
+### Empty recording
+If you stop a recording with zero actions, the JSON and `.spec.ts` files are still generated — but the test will be empty and pass trivially.
+
+### Recording is transparent
+When no recording is active, all browser and HTTP commands work identically. Recording state is completely transparent — commands behave the same whether recording is on or off.
+
+### Corrupted state file
+If the state file is corrupted and `record cancel` doesn't work:
+```bash
+rm tmp/qprobe/state/recording.json
+```
+
+### File locations
+- Active recording state: `tmp/qprobe/state/recording.json`
+- Saved recordings: `tests/qprobe/recordings/<name>.json`
+- Generated tests: `tests/qprobe/recordings/<name>.spec.ts`
+
 ## Tips
 
 - **Record important flows early** — login, CRUD, critical paths
@@ -192,3 +233,4 @@ tests/qprobe/
 - **Export recordings** to share with team or run in CI
 - **Edit generated .spec.ts** files to add custom assertions
 - **Use `--retries 2`** for network-dependent tests that may be flaky
+- **If `record start` fails** — check for stale recording with `qprobe record cancel`

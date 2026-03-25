@@ -22,8 +22,16 @@ const STATE_FILE = 'tmp/qprobe/state/recording.json'
 let activeRecording: Recording | null = null
 
 export async function startRecording(name: string): Promise<void> {
-  if (activeRecording) {
-    throw new Error(`Already recording "${activeRecording.name}". Stop it first.`)
+  // Check disk first — each CLI call is a separate process
+  const existing = activeRecording ?? await loadActiveRecording()
+  if (existing) {
+    const startedAt = new Date(existing.startedAt)
+    const elapsed = Date.now() - startedAt.getTime()
+    const mins = Math.floor(elapsed / 60_000)
+    const age = mins > 0 ? ` (started ${mins}m ago)` : ''
+    throw new Error(
+      `Already recording "${existing.name}"${age}. Run "qprobe record stop" or "qprobe record cancel" first.`
+    )
   }
 
   const config = await loadProbeConfig()

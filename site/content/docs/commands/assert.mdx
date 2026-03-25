@@ -15,19 +15,19 @@ qprobe assert <type> [value]
 
 | Type | Description | Example |
 |------|-------------|---------|
-| `text "<string>"` | Assert text is visible on the page | `qprobe assert text "Welcome"` |
-| `no-text "<string>"` | Assert text is not visible | `qprobe assert no-text "Error"` |
-| `element <selector>` | Assert element exists in DOM | `qprobe assert element "#dashboard"` |
-| `url "<pattern>"` | Assert current URL matches pattern | `qprobe assert url "/dashboard"` |
-| `title "<string>"` | Assert page title | `qprobe assert title "Dashboard"` |
-| `status <code>` | Assert last HTTP response status | `qprobe assert status 200` |
-| `no-errors` | Assert no errors in browser console | `qprobe assert no-errors` |
-| `no-network-errors` | Assert no failed network requests | `qprobe assert no-network-errors` |
+| `text "<string>"` | Page body contains text (case-sensitive) | `qprobe assert text "Welcome"` |
+| `no-text "<string>"` | Page body does NOT contain text | `qprobe assert no-text "Error"` |
+| `element <ref\|selector>` | Element exists in interactive snapshot | `qprobe assert element @e3` |
+| `url "<pattern>"` | Current URL matches regex pattern | `qprobe assert url "/dashboard"` |
+| `title "<string>"` | Page title contains text (case-sensitive) | `qprobe assert title "Dashboard"` |
+| `status <code> <path>` | HTTP endpoint returns status code | `qprobe assert status 200 /api/health` |
+| `no-errors` | No uncaught JS exceptions in console | `qprobe assert no-errors` |
+| `no-network-errors` | No 4xx/5xx HTTP responses | `qprobe assert no-network-errors` |
 
 ## Examples
 
 ```bash
-# Check page content
+# Check page content (case-sensitive)
 qprobe assert text "Welcome back"
 qprobe assert no-text "Something went wrong"
 
@@ -35,13 +35,47 @@ qprobe assert no-text "Something went wrong"
 qprobe assert url "/dashboard"
 qprobe assert title "Dashboard - MyApp"
 
-# Check for errors
+# Check element from snapshot
+qprobe assert element @e3
+qprobe assert element "#user-avatar"
+
+# Check HTTP endpoint (TWO args: code + path)
+qprobe assert status 200 /api/health
+qprobe assert status 404 /api/nonexistent
+
+# Check for errors (requires open browser)
 qprobe assert no-errors
 qprobe assert no-network-errors
 
-# Check element exists
-qprobe assert element ".user-avatar"
+# Chain in scripts
+qprobe assert status 200 /api/health && \
+qprobe assert no-errors && \
+echo "All checks passed"
 ```
+
+## Output
+
+```bash
+# Success
+qprobe assert text "Dashboard"
+# ✅ Page contains "Dashboard"
+
+# Failure
+qprobe assert no-errors
+# ❌ Found 2 JS error(s):
+#   TypeError: Cannot read properties of undefined (reading 'map')
+#   ReferenceError: user is not defined
+
+qprobe assert status 200 /api/health
+# ❌ http://localhost:3000/api/health returned 500, expected 200
+```
+
+## Notes
+
+- `text` / `no-text` are **case-sensitive**
+- `url` pattern is a **JavaScript RegExp** (not glob) — escape dots: `"localhost\\.com"`
+- `status` requires **two arguments**: expected code and URL path
+- `no-errors` and `no-network-errors` require an open browser session
 
 ## Exit Codes
 

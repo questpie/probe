@@ -44,49 +44,72 @@ function Logo() {
 
 // ── Animated Terminal ───────────────────────────
 
-type LineType = 'think' | 'cmd' | 'ok' | 'data' | 'ref' | 'blank'
+type LineType = 'think' | 'cmd' | 'ok' | 'info' | 'data' | 'ref' | 'error' | 'removed' | 'blank'
 
 const LINES: Array<{ t: LineType; text: string }> = [
-  { t: 'think', text: 'I just implemented user filtering.' },
-  { t: 'think', text: 'Let me verify it actually works.' },
+  { t: 'think', text: 'Implemented user filtering. Let me verify.' },
   { t: 'blank', text: '' },
-  { t: 'cmd', text: '$ qprobe start server "bun dev" \\' },
-  { t: 'cmd', text: '    --ready "ready on" --port 3000' },
-  { t: 'ok', text: '✔ Started "server" (PID 24601)' },
-  { t: 'blank', text: '' },
-  { t: 'cmd', text: '$ qprobe logs server --grep "ERROR"' },
-  { t: 'data', text: '  (no errors)' },
-  { t: 'blank', text: '' },
-  { t: 'cmd', text: '$ qprobe http GET /api/users --status 200' },
-  { t: 'ok', text: '✔ 200 OK (12ms)' },
+  { t: 'cmd', text: '$ qprobe start server "bun dev" --ready "ready on" --port 3000' },
+  { t: 'info', text: 'ℹ Waiting for ready pattern...' },
+  { t: 'ok', text: '✔ server ready (PID 24601, port 3000)' },
   { t: 'blank', text: '' },
   { t: 'cmd', text: '$ qprobe browser open /users' },
   { t: 'ok', text: '✔ Opened http://localhost:3000/users' },
   { t: 'cmd', text: '$ qprobe browser snapshot -i' },
-  { t: 'ref', text: '- textbox "Filter" [ref=@e1]' },
-  { t: 'ref', text: '- table "Users" (2 rows) [ref=@e2]' },
+  { t: 'ref', text: '- heading "Users" [ref=@e1]' },
+  { t: 'ref', text: '- textbox "Filter" [ref=@e2]' },
+  { t: 'ref', text: '- table [ref=@e3]' },
+  { t: 'ref', text: '  - row: "Ali" | "ali@test.com"' },
+  { t: 'ref', text: '  - row: "Bob" | "bob@test.com"' },
   { t: 'blank', text: '' },
-  { t: 'cmd', text: '$ qprobe browser fill @e1 "Ali"' },
-  { t: 'ok', text: '✔ Filled @e1' },
+  { t: 'think', text: 'Filter is @e2, table has 2 rows. Testing.' },
+  { t: 'blank', text: '' },
+  { t: 'cmd', text: '$ qprobe browser fill @e2 "Ali"' },
+  { t: 'ok', text: '✔ Filled @e2' },
   { t: 'cmd', text: '$ qprobe browser snapshot --diff' },
-  { t: 'ref', text: 'CHANGED: table (2 → 1 row)' },
+  { t: 'data', text: '  (no changes)' },
   { t: 'blank', text: '' },
-  { t: 'cmd', text: '$ qprobe assert no-errors' },
-  { t: 'ok', text: '✔ No JS errors' },
+  { t: 'think', text: 'Table unchanged. Filter is broken.' },
   { t: 'blank', text: '' },
-  { t: 'think', text: 'Filter works. Recording for regression.' },
+  { t: 'cmd', text: '$ qprobe browser console --level error' },
+  { t: 'error', text: "[error] TypeError: Cannot read properties of" },
+  { t: 'error', text: "  undefined (reading 'filter')" },
+  { t: 'error', text: '  at useFilteredUsers (users.tsx:14)' },
+  { t: 'blank', text: '' },
+  { t: 'think', text: 'users array is undefined on first render.' },
+  { t: 'think', text: 'Adding fallback: const list = users ?? []' },
+  { t: 'blank', text: '' },
+  { t: 'cmd', text: '$ qprobe restart server' },
+  { t: 'ok', text: '✔ server ready (PID 24608, port 3000)' },
+  { t: 'cmd', text: '$ qprobe record start "user-filter"' },
+  { t: 'ok', text: '✔ Recording started' },
+  { t: 'cmd', text: '$ qprobe browser reload' },
+  { t: 'ok', text: '✔ Reloaded' },
+  { t: 'cmd', text: '$ qprobe browser fill @e2 "Ali"' },
+  { t: 'ok', text: '✔ Filled @e2' },
+  { t: 'cmd', text: '$ qprobe browser snapshot --diff' },
+  { t: 'ref', text: '  - table [ref=@e3]' },
+  { t: 'ref', text: '    - row: "Ali" | "ali@test.com"' },
+  { t: 'removed', text: '-   - row: "Bob" | "bob@test.com"' },
+  { t: 'blank', text: '' },
+  { t: 'think', text: 'Filter works now. Recording for regression.' },
   { t: 'cmd', text: '$ qprobe record stop' },
-  { t: 'ok', text: '✔ → user-filter.spec.ts' },
-  { t: 'cmd', text: '$ qprobe replay --all' },
-  { t: 'ok', text: '✔ 3/3 passed (0 AI tokens)' },
+  { t: 'ok', text: '✔ Saved: user-filter.json (4 actions)' },
+  { t: 'ok', text: '✔ Generated: user-filter.spec.ts' },
+  { t: 'cmd', text: '$ qprobe replay user-filter' },
+  { t: 'ok', text: '  ✓ user-filter (1.2s)' },
+  { t: 'ok', text: '  1 passed' },
 ]
 
 const LINE_COLORS: Record<LineType, string> = {
   think: S.cyan,
   cmd: S.fg,
   ok: S.green,
+  info: S.muted,
   data: S.dim,
   ref: '#D44FFF',
+  error: '#FF6B6B',
+  removed: '#E57373',
   blank: 'transparent',
 }
 
@@ -97,7 +120,7 @@ function Terminal() {
   useEffect(() => {
     if (visible >= LINES.length) return
     const line = LINES[visible]
-    const delay = line?.t === 'cmd' ? 500 : line?.t === 'think' ? 700 : line?.t === 'blank' ? 150 : 100
+    const delay = line?.t === 'cmd' ? 800 : line?.t === 'think' ? 1100 : line?.t === 'blank' ? 300 : line?.t === 'error' ? 500 : 180
     const timer = setTimeout(() => setVisible((v) => v + 1), delay)
     return () => clearTimeout(timer)
   }, [visible])
@@ -138,6 +161,13 @@ function Terminal() {
             return (
               <div key={i} style={{ color: S.cyan, fontStyle: 'italic', opacity: 0.8 }}>
                 {'> '}{line.text}
+              </div>
+            )
+          }
+          if (line.t === 'removed') {
+            return (
+              <div key={i} style={{ color: '#E57373', background: 'rgba(229,115,115,0.08)' }}>
+                {line.text}
               </div>
             )
           }
@@ -232,8 +262,8 @@ function Landing() {
               <p style={{ fontFamily: S.mono, fontSize: 10, fontWeight: 700, color: S.purple, marginBottom: 10 }}>{step.num}</p>
               <h4 style={{ fontFamily: S.mono, fontSize: 14, fontWeight: 700, marginBottom: 8 }}>{step.title}</h4>
               <p style={{ fontSize: 13, color: S.muted, lineHeight: 1.5, marginBottom: 12 }}>{step.desc}</p>
-              <code style={{ fontFamily: S.mono, fontSize: 11, display: 'block', padding: '6px 10px', background: S.bg, border: `1px solid ${S.border}`, color: S.dim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {step.cmd}
+              <code style={{ fontFamily: S.mono, fontSize: 11, display: 'block', padding: '6px 10px', background: S.bg, border: `1px solid ${S.border}`, color: S.fg, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ color: S.dim }}>$</span> {step.cmd}
               </code>
             </div>
           ))}
@@ -258,6 +288,38 @@ function Landing() {
               <p style={{ fontFamily: S.mono, fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: S.purple, marginBottom: 10 }}>{f.label}</p>
               <h4 style={{ fontFamily: S.mono, fontSize: 14, fontWeight: 700, marginBottom: 8 }}>{f.title}</h4>
               <p style={{ fontSize: 13, color: S.muted, lineHeight: 1.6 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Built with */}
+      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '80px 24px', borderBottom: `1px solid ${S.border}` }}>
+        <h2 style={{ fontFamily: S.mono, fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 16 }}>
+          Built with
+        </h2>
+        <p style={{ fontSize: 15, color: S.muted, marginBottom: 40, maxWidth: 640, lineHeight: 1.7 }}>
+          TypeScript-native CLI powered by the UnJS ecosystem. Minimal dependencies, fast startup, no heavy frameworks.
+        </p>
+        <div className="stack-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: S.border, border: `1px solid ${S.border}` }}>
+          {[
+            { name: 'citty', role: 'CLI framework', tag: 'UnJS' },
+            { name: 'c12', role: 'Config loading', tag: 'UnJS' },
+            { name: 'consola', role: 'Terminal output', tag: 'UnJS' },
+            { name: 'ofetch', role: 'HTTP client', tag: 'UnJS' },
+            { name: 'tinyexec', role: 'Process spawning', tag: 'UnJS' },
+            { name: 'chokidar', role: 'File watching' },
+            { name: 'agent-browser', role: 'Browser driver', tag: 'Vercel' },
+            { name: 'Playwright', role: 'Test replay', tag: 'Microsoft' },
+            { name: 'tsdown', role: 'Build tool', tag: 'Rolldown' },
+            { name: 'Biome', role: 'Lint & format' },
+          ].map((pkg) => (
+            <div key={pkg.name} style={{ padding: '16px 20px', background: S.card, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontFamily: S.mono, fontSize: 13, fontWeight: 600, color: S.fg }}>{pkg.name}</span>
+                {'tag' in pkg && pkg.tag && <span style={{ fontFamily: S.mono, fontSize: 9, color: S.purple, letterSpacing: '0.05em' }}>{pkg.tag}</span>}
+              </div>
+              <span style={{ fontFamily: S.mono, fontSize: 11, color: S.dim }}>{pkg.role}</span>
             </div>
           ))}
         </div>
@@ -295,9 +357,11 @@ function Landing() {
           .hero-grid { grid-template-columns: 1fr !important; }
           .loop-grid { grid-template-columns: 1fr 1fr !important; }
           .features-grid { grid-template-columns: 1fr !important; }
+          .stack-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 480px) {
           .loop-grid { grid-template-columns: 1fr !important; }
+          .stack-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
