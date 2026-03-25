@@ -1,6 +1,6 @@
 {
   "name": "@questpie/probe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Dev testing CLI for AI coding agents",
   "license": "MIT",
   "type": "module",

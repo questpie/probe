@@ -4,7 +4,7 @@ import { defineCommand, runMain } from 'citty'
 const main = defineCommand({
   meta: {
     name: 'qprobe',
-    version: '0.1.0',
+    version: '0.1.1',
     description: 'Dev testing CLI for AI coding agents',
   },
   subCommands: {
