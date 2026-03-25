@@ -1,52 +1,65 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { source } from '@/lib/source'
-import { DocsLayout } from 'fumadocs-ui/layouts/docs'
-import { DocsPage, DocsBody } from 'fumadocs-ui/page'
-import defaultComponents from 'fumadocs-ui/mdx'
+import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+
+import { DocsRouteContent } from '@/components/docs/DocsRouteContent'
 
 export const Route = createFileRoute('/docs/$')({
-  component: DocsRoute,
-  head: ({ params }) => {
-    const slugs = (params as { _splat?: string })._splat?.split('/').filter(Boolean) ?? []
-    const page = source.getPage(slugs)
-    if (!page) return { meta: [{ title: 'Not Found | QUESTPIE Probe' }] }
+  component: Page,
+  loader: async ({ params }) => {
+    const slugs = params._splat?.split('/') ?? []
+    return serverLoader({ data: slugs })
+  },
+  head: ({ loaderData }) => {
+    if (!loaderData) return {}
+
+    const { title, description, url } = loaderData
+
     return {
       meta: [
-        { title: `${page.data.title} | QUESTPIE Probe Docs` },
-        { name: 'description', content: page.data.description ?? '' },
+        { title: `${title} | QUESTPIE Probe Docs` },
+        { name: 'description', content: description },
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        { property: 'og:url', content: `https://probe.questpie.com${url}` },
+        { property: 'og:type', content: 'article' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: title },
+        { name: 'twitter:description', content: description },
       ],
     }
   },
+  headers: () => ({
+    'Cache-Control':
+      'public, max-age=3600, s-maxage=3600, stale-while-revalidate=604800',
+  }),
+  staleTime: 5 * 60_000,
+  gcTime: 10 * 60_000,
 })
 
-function DocsRoute() {
-  const params = Route.useParams() as { _splat?: string }
-  const slugs = params._splat?.split('/').filter(Boolean) ?? []
-  const page = source.getPage(slugs)
+const serverLoader = createServerFn({ method: 'GET' })
+  .inputValidator((slugs: string[]) => slugs)
+  .handler(async ({ data: slugs }) => {
+    const { source } = await import('@/lib/source')
+    const page = source.getPage(slugs)
+    if (!page) throw notFound()
 
-  if (!page) {
-    return (
-      <DocsLayout tree={source.pageTree} nav={{ title: 'QUESTPIE Probe' }}>
-        <DocsPage>
-          <DocsBody>
-            <h1>Page not found</h1>
-            <p>The requested documentation page does not exist.</p>
-          </DocsBody>
-        </DocsPage>
-      </DocsLayout>
-    )
-  }
+    const title = page.data.title ?? 'Documentation'
+    const description =
+      page.data.description ??
+      'QUESTPIE Probe documentation — dev testing CLI for AI coding agents.'
 
-  const MDX = page.data.body
+    return {
+      path: page.path,
+      url: page.url,
+      title,
+      description,
+      slugs,
+      pageTree: await source.serializePageTree(source.getPageTree()),
+    }
+  })
 
-  return (
-    <DocsLayout tree={source.pageTree} nav={{ title: 'QUESTPIE Probe' }}>
-      <DocsPage toc={page.data.toc}>
-        <DocsBody>
-          <h1>{page.data.title}</h1>
-          <MDX components={{ ...defaultComponents }} />
-        </DocsBody>
-      </DocsPage>
-    </DocsLayout>
-  )
+function Page() {
+  const data = Route.useLoaderData()
+
+  return <DocsRouteContent data={data} />
 }

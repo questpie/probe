@@ -1,0 +1,5 @@
+node_modules
+.output
+.source
+.tanstack
+*.html.bak

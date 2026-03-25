@@ -6,5 +6,6 @@ tmp/qprobe/
 site/.output/
 site/.source/
 site/.tanstack/
+site/.nitro/
 site/node_modules/
 qprobe.config.ts

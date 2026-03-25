@@ -1,15 +1,43 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/shadcn.css';
 @import 'fumadocs-ui/css/preset.css';
-@import '@fontsource-variable/inter';
+@import 'tw-animate-css';
+@import '@fontsource-variable/geist';
 @import '@fontsource-variable/jetbrains-mono';
 
 @theme inline {
-  --font-sans: 'Inter Variable', 'Inter', sans-serif;
+  --font-sans: 'Geist Variable', 'Geist', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
   --color-primary: var(--primary);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --radius-none: 0;
+  --color-lp-purple: #B700FF;
+  --color-lp-bg: #0A0A0A;
+  --color-lp-card: #111111;
+  --color-lp-border: #333333;
+  --color-lp-muted: #999999;
+  --color-lp-accent-green: #00E676;
+  --color-lp-accent-cyan: #40C4FF;
 }
 
 :root {
@@ -33,6 +61,40 @@
   --border: oklch(0.371 0 0);
   --input: oklch(0.371 0 0);
   --ring: oklch(0.541 0.281 303.5);
+  --success: oklch(0.765 0.219 155);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.793 0.155 82);
+  --warning-foreground: oklch(0.145 0 0);
+  --info: oklch(0.77 0.119 222);
+  --info-foreground: oklch(0.145 0 0);
+  --chart-1: oklch(0.541 0.281 303.5);
+  --chart-2: oklch(0.765 0.219 155);
+  --chart-3: oklch(0.77 0.119 222);
+  --chart-4: oklch(0.793 0.155 82);
+  --chart-5: oklch(0.637 0.237 25);
+}
+
+.light,
+:root.light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.269 0 0);
+  --card: oklch(0.98 0 0);
+  --card-foreground: oklch(0.269 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.269 0 0);
+  --primary: oklch(0.541 0.281 303.5);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.955 0 0);
+  --secondary-foreground: oklch(0.269 0 0);
+  --muted: oklch(0.955 0 0);
+  --muted-foreground: oklch(0.48 0 0);
+  --accent: oklch(0.955 0 0);
+  --accent-foreground: oklch(0.145 0 0);
+  --destructive: oklch(0.637 0.237 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.541 0.281 303.5);
 }
 
 /* Brutalist: zero radius everywhere */
@@ -42,7 +104,6 @@
   border-radius: 0 !important;
 }
 
-/* No shadows */
 [class*='shadow'] {
   box-shadow: none !important;
 }
@@ -60,8 +121,6 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: var(--background);
-  color: var(--foreground);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -72,4 +131,25 @@ code {
 ::selection {
   background: rgba(183, 0, 255, 0.3);
   color: #fff;
+}
+
+/* Docs prose heading overrides */
+#nd-page > h1 {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+article h1,
+article h2,
+article h3,
+article h4 {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* Sidebar text sizing */
+[data-fumadocs-sidebar] {
+  font-size: 13px;
 }
