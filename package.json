@@ -22,7 +22,7 @@
     "dev": "tsdown --watch",
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
+    "test": "bun test tests/unit tests/integration",
     "lint": "biome check .",
     "prepublishOnly": "bun run build"
   },
