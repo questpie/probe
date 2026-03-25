@@ -25,34 +25,41 @@ function Logo() {
 }
 
 const TERM_LINES = [
-  { type: 'cmd', text: '$ qprobe start server "bun dev" --ready "ready on" --port 3000' },
+  { type: 'dim', text: '# Agent just implemented a user filter feature...' },
+  { type: 'dim', text: '# Now verifying it actually works:' },
+  { type: 'blank', text: '' },
+  { type: 'cmd', text: '$ qprobe start server "bun dev" \\' },
+  { type: 'cmd', text: '    --ready "ready on" --port 3000' },
   { type: 'ok', text: '✔ Started "server" (PID 24601)' },
   { type: 'blank', text: '' },
-  { type: 'cmd', text: '$ qprobe http GET /api/users --status 200' },
-  { type: 'ok', text: '✔ 200 OK (12ms)' },
-  { type: 'json', text: '[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]' },
-  { type: 'blank', text: '' },
   { type: 'cmd', text: '$ qprobe logs server --grep "ERROR"' },
-  { type: 'dim', text: '  (no errors found)' },
+  { type: 'dim', text: '  (no errors)' },
   { type: 'blank', text: '' },
-  { type: 'cmd', text: '$ qprobe browser open http://localhost:3000' },
-  { type: 'ok', text: '✔ Opened http://localhost:3000' },
-  { type: 'cmd', text: '$ qprobe browser snapshot -i -c' },
-  { type: 'ref', text: '- heading "Dashboard" [ref=@e1]' },
-  { type: 'ref', text: '- button "Create" [ref=@e2]' },
-  { type: 'ref', text: '- table "Users" [ref=@e3]' },
+  { type: 'cmd', text: '$ qprobe http GET /api/users \\' },
+  { type: 'cmd', text: '    --status 200' },
+  { type: 'ok', text: '✔ 200 OK (12ms)' },
+  { type: 'json', text: '[{"id":1,"name":"Alice"},{"id":2}]' },
+  { type: 'blank', text: '' },
+  { type: 'cmd', text: '$ qprobe browser open /users' },
+  { type: 'ok', text: '✔ Opened http://localhost:3000/users' },
+  { type: 'cmd', text: '$ qprobe browser snapshot -i' },
+  { type: 'ref', text: '- textbox "Filter" [ref=@e1]' },
+  { type: 'ref', text: '- table "Users" (2 rows) [ref=@e2]' },
+  { type: 'ref', text: '- button "Clear" [ref=@e3]' },
+  { type: 'blank', text: '' },
+  { type: 'cmd', text: '$ qprobe browser fill @e1 "Ali"' },
+  { type: 'ok', text: '✔ Filled @e1' },
+  { type: 'cmd', text: '$ qprobe browser snapshot --diff' },
+  { type: 'ref', text: 'CHANGED: table (2 rows → 1 row)' },
   { type: 'blank', text: '' },
   { type: 'cmd', text: '$ qprobe assert no-errors' },
   { type: 'ok', text: '✔ No JS errors' },
-  { type: 'cmd', text: '$ qprobe assert no-network-errors' },
-  { type: 'ok', text: '✔ No network errors' },
   { type: 'blank', text: '' },
-  { type: 'cmd', text: '$ qprobe record start "user-flow"' },
-  { type: 'ok', text: '✔ Recording started — actions will be captured' },
+  { type: 'dim', text: '# It works. Record it.' },
   { type: 'cmd', text: '$ qprobe record stop' },
-  { type: 'ok', text: '✔ Saved 6 actions → user-flow.spec.ts' },
-  { type: 'cmd', text: '$ qprobe replay "user-flow"' },
-  { type: 'ok', text: '✔ 1/1 passed (zero AI tokens)' },
+  { type: 'ok', text: '✔ → user-filter.spec.ts' },
+  { type: 'cmd', text: '$ qprobe replay --all' },
+  { type: 'ok', text: '✔ 3/3 passed (0 AI tokens)' },
 ]
 
 const colors: Record<string, string> = {
@@ -90,7 +97,7 @@ function Terminal() {
         <div style={{ width: 8, height: 8, background: '#FFB300' }} />
         <div style={{ width: 8, height: 8, background: '#00E676' }} />
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#555', marginLeft: 8 }}>
-          terminal
+          AI agent verifying a feature
         </span>
       </div>
       <pre
@@ -100,8 +107,11 @@ function Terminal() {
           lineHeight: 1.7,
           padding: '16px 20px',
           margin: 0,
-          overflow: 'hidden',
-          minHeight: 380,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          maxHeight: 420,
+          wordBreak: 'break-word',
+          whiteSpace: 'pre-wrap',
         }}
       >
         {TERM_LINES.slice(0, visibleLines).map((line, i) => (
