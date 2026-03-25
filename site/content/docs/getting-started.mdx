@@ -5,19 +5,28 @@ description: Install QUESTPIE Probe, initialize a project, and run your first co
 
 # Getting Started
 
-## Install
+## Install the CLI
 
 ```bash
 bun add -g @questpie/probe
 ```
 
-Or with other package managers:
+Or with npm/pnpm:
 
 ```bash
+npm install -g @questpie/probe
 pnpm add -g @questpie/probe
-bun add -g @questpie/probe
-yarn global add @questpie/probe
 ```
+
+## Install the AI Skill
+
+Give your AI coding agent the knowledge to use Probe:
+
+```bash
+npx skills add questpie/probe
+```
+
+This installs the `qprobe` skill into your agent (Claude Code, Cursor, Windsurf). The agent will automatically use Probe when you ask it to test, debug, or verify your running app.
 
 ## Initialize
 

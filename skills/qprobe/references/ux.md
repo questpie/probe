@@ -1,7 +1,3 @@
----
-name: qprobe-ux
-description: "UX testing and evaluation using QUESTPIE Probe. Run heuristic evaluations, task completion tests, navigation audits, accessibility checks, and A/B comparisons on running web apps. Use when: evaluating usability, checking UX quality, auditing user flows, comparing two versions, finding UX issues, testing if users can complete tasks. Triggers: 'review the UX', 'is this usable', 'can a user find X', 'compare these two versions', 'UX audit', 'heuristic evaluation', 'test the onboarding flow', 'is the checkout intuitive', 'find usability problems', 'accessibility check'. Use even for 'does this make sense' or 'is this confusing' in context of a web UI."
----
 
 # qprobe-ux — UX Testing Skill
 

@@ -7,7 +7,11 @@ Dev testing CLI for AI coding agents. Orchestrates dev servers, aggregates logs,
 ## Install
 
 ```bash
+# Install the CLI
 bun add -g @questpie/probe
+
+# Install the AI skill (for Claude Code, Cursor, Windsurf)
+npx skills add questpie/probe
 ```
 
 ## Quick Start
