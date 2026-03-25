@@ -221,7 +221,7 @@ function Landing() {
         <p style={{ fontSize: 15, color: S.muted, marginBottom: 40, maxWidth: 640, lineHeight: 1.7 }}>
           AI agent implements a feature. Probe checks it in the running app. If it works — record. Replay on every future change. No manual testing.
         </p>
-        <div className="loop-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: S.border, border: `1px solid ${S.border}` }}>
+        <div className="loop-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, background: S.border, border: `1px solid ${S.border}` }}>
           {[
             { num: '01', title: 'Code', desc: 'Agent implements a feature or fixes a bug.', cmd: 'git commit -m "add filter"' },
             { num: '02', title: 'Verify', desc: 'Probe checks logs, API, browser state.', cmd: 'qprobe check && qprobe assert no-errors' },
