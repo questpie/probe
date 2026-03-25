@@ -25,8 +25,8 @@ function Logo() {
 }
 
 const TERM_LINES = [
-  { type: 'dim', text: '# Agent just implemented a user filter feature...' },
-  { type: 'dim', text: '# Now verifying it actually works:' },
+  { type: 'dim', text: '# I just implemented user filtering.' },
+  { type: 'dim', text: '# Let me verify it works:' },
   { type: 'blank', text: '' },
   { type: 'cmd', text: '$ qprobe start server "bun dev" \\' },
   { type: 'cmd', text: '    --ready "ready on" --port 3000' },
@@ -55,7 +55,7 @@ const TERM_LINES = [
   { type: 'cmd', text: '$ qprobe assert no-errors' },
   { type: 'ok', text: '✔ No JS errors' },
   { type: 'blank', text: '' },
-  { type: 'dim', text: '# It works. Record it.' },
+  { type: 'dim', text: '# Works. Recording for regression.' },
   { type: 'cmd', text: '$ qprobe record stop' },
   { type: 'ok', text: '✔ → user-filter.spec.ts' },
   { type: 'cmd', text: '$ qprobe replay --all' },
