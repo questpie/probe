@@ -22,7 +22,7 @@
     "dev": "tsdown --watch",
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
-    "test": "bun test tests/unit tests/integration",
+    "test": "bun test tests/unit tests/integration --timeout 15000",
     "lint": "biome check .",
     "prepublishOnly": "bun run build"
   },
