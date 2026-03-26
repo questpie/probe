@@ -20,6 +20,17 @@ export function log(msg: string): void {
   consola.log(msg)
 }
 
+export function hint(msg: string): void {
+  consola.log(`  \x1b[2mHint: ${msg}\x1b[0m`)
+}
+
+export function errorWithHint(msg: string, hints: string[]): void {
+  consola.error(msg)
+  for (const h of hints) {
+    consola.log(`  \x1b[2m> ${h}\x1b[0m`)
+  }
+}
+
 export function table(rows: Record<string, unknown>[]): void {
   if (rows.length === 0) return
   const keys = Object.keys(rows[0]!)

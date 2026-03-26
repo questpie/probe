@@ -2,7 +2,7 @@ import type { CommandDef } from 'citty'
 import { defineCommand } from 'citty'
 import { startProcess } from '../core/process-manager'
 import { parseDuration } from '../utils/duration'
-import { error, success } from '../utils/output'
+import { error, hint, success } from '../utils/output'
 
 const command = defineCommand({
   meta: {
@@ -72,8 +72,20 @@ const command = defineCommand({
 
       success(`Started "${args.name}" (PID ${pid})`)
     } catch (err) {
-      error(err instanceof Error ? err.message : String(err))
-      process.exit(err instanceof Error && err.message.includes('Timeout') ? 2 : 1)
+      const msg = err instanceof Error ? err.message : String(err)
+      error(msg)
+      if (msg.includes('exited with code') && msg.includes('code 0') && args.cmd.includes('&&')) {
+        hint('Your command uses "&&" which may cause the shell to exit early.')
+        hint(
+          `Try: qprobe start ${args.name} "${args.cmd.split('&&').pop()?.trim()}" --cwd "<directory>"`,
+        )
+      }
+      if (msg.includes('Timeout') && !args.ready) {
+        hint(
+          'No --ready pattern specified. The process may have started but qprobe cannot detect it.',
+        )
+      }
+      process.exit(msg.includes('Timeout') ? 2 : 1)
     }
   },
 })

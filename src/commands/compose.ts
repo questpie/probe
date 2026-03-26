@@ -1,9 +1,9 @@
 import type { CommandDef } from 'citty'
 import { defineCommand } from 'citty'
-import { loadProbeConfig } from '../core/config'
 import { composeDown, composeUp } from '../core/compose-engine'
+import { ConfigError, loadProbeConfig } from '../core/config'
 import { listProcesses } from '../core/process-manager'
-import { error, info, json as jsonOut, success, table } from '../utils/output'
+import { error, errorWithHint, info, json as jsonOut, success, table } from '../utils/output'
 
 const up = defineCommand({
   meta: { name: 'up', description: 'Start all services from config' },
@@ -13,9 +13,21 @@ const up = defineCommand({
     'no-health': { type: 'boolean', description: 'Skip health checks', default: false },
   },
   async run({ args }) {
-    const config = await loadProbeConfig()
+    let config: Awaited<ReturnType<typeof loadProbeConfig>>
+    try {
+      config = await loadProbeConfig()
+    } catch (err) {
+      if (err instanceof ConfigError) {
+        error(err.message)
+        process.exit(4)
+      }
+      throw err
+    }
     if (!config.services || Object.keys(config.services).length === 0) {
-      error('No services defined in config')
+      errorWithHint('No services defined in config.', [
+        'Add services to qprobe.config.ts:',
+        '  services: { api: { cmd: "bun dev", ready: "ready on", port: 3000 } }',
+      ])
       process.exit(4)
     }
 
@@ -27,7 +39,19 @@ const up = defineCommand({
       })
       success(`Started ${started.length} service(s): ${started.join(', ')}`)
     } catch (err) {
-      error(err instanceof Error ? err.message : String(err))
+      const msg = err instanceof Error ? err.message : String(err)
+      error(msg)
+      // Suggest manual fallback when compose fails
+      const failedService = msg.match(/Process "([^"]+)"|service[:\s]+"?(\w+)/i)
+      const svcName = failedService?.[1] ?? failedService?.[2]
+      if (svcName && config.services?.[svcName]) {
+        const svc = config.services[svcName]
+        const manualCmd = [`qprobe start ${svcName} "${svc.cmd}"`]
+        if (svc.ready) manualCmd.push(`--ready "${svc.ready}"`)
+        if (svc.port) manualCmd.push(`--port ${svc.port}`)
+        if (svc.cwd) manualCmd.push(`--cwd "${svc.cwd}"`)
+        errorWithHint('Try starting the service manually:', [manualCmd.join(' ')])
+      }
       process.exit(1)
     }
   },

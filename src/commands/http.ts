@@ -62,6 +62,10 @@ const command = defineCommand({
       description: 'Show request timing breakdown',
       default: false,
     },
+    retries: {
+      type: 'string',
+      description: 'Max retries on 429/503 (default: 3)',
+    },
   },
   async run({ args }) {
     const config = await loadProbeConfig()
@@ -100,9 +104,14 @@ const command = defineCommand({
           token: args.token,
           verbose: args.verbose,
           raw: args.raw,
+          retries: args.retries ? Number(args.retries) : undefined,
         },
         config,
       )
+
+      if (result.retried) {
+        info(`Request succeeded after ${result.retried} retry(s)`)
+      }
 
       if (args.verbose) {
         log(`\u2190 ${result.status} ${result.statusText} (${result.duration}ms)`)

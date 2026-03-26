@@ -1,7 +1,7 @@
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import type { CommandDef } from 'citty'
 import { defineCommand } from 'citty'
-import { access, mkdir, writeFile } from 'node:fs/promises'
-import { error, info, success } from '../utils/output'
+import { error, info, success, warn } from '../utils/output'
 
 const CONFIG_TEMPLATE = `import { defineConfig } from '@questpie/probe'
 
@@ -92,7 +92,6 @@ const command = defineCommand({
 
     // Add to .gitignore if it exists
     try {
-      const { readFile } = await import('node:fs/promises')
       const gitignore = await readFile('.gitignore', 'utf-8')
       if (!gitignore.includes('tmp/qprobe')) {
         await writeFile('.gitignore', gitignore + GITIGNORE_ADDITION, 'utf-8')
@@ -102,6 +101,25 @@ const command = defineCommand({
       // no .gitignore, skip
     }
 
+    // Add @questpie/probe as devDependency so config import resolves
+    try {
+      const pkgRaw = await readFile('package.json', 'utf-8')
+      const pkg = JSON.parse(pkgRaw) as Record<string, unknown>
+      const devDeps = (pkg.devDependencies ?? {}) as Record<string, string>
+      if (!devDeps['@questpie/probe']) {
+        devDeps['@questpie/probe'] = 'latest'
+        pkg.devDependencies = devDeps
+        await writeFile('package.json', `${JSON.stringify(pkg, null, 2)}\n`, 'utf-8')
+        success('Added @questpie/probe to devDependencies')
+        info('Run your package manager install to complete setup (e.g. "bun install")')
+      }
+    } catch {
+      warn(
+        'Could not update package.json — add @questpie/probe manually: bun add -d @questpie/probe',
+      )
+    }
+
+    info('Run "qprobe doctor" to verify your setup')
     info('Run "qprobe compose up" to start your stack')
   },
 })

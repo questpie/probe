@@ -136,4 +136,122 @@ describe('makeRequest', () => {
     )
     expect(result.body).toEqual({ auth: 'Override new' })
   })
+
+  test('retries on 429 with exponential backoff', async () => {
+    let attempts = 0
+    const retryServer = createServer((req, res) => {
+      attempts++
+      if (attempts < 3) {
+        res.writeHead(429, { 'Retry-After': '0' })
+        res.end()
+        return
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true }))
+    })
+
+    const retryPort = await new Promise<number>((resolve) => {
+      retryServer.listen(0, '127.0.0.1', () => {
+        const addr = retryServer.address()
+        resolve(typeof addr === 'object' && addr ? addr.port : 0)
+      })
+    })
+
+    try {
+      const result = await makeRequest(
+        { method: 'GET', path: `http://127.0.0.1:${retryPort}/`, retries: 3 },
+        config,
+      )
+      expect(result.status).toBe(200)
+      expect(result.body).toEqual({ ok: true })
+      expect(result.retried).toBe(2)
+      expect(attempts).toBe(3)
+    } finally {
+      retryServer.close()
+    }
+  })
+
+  test('retries on 503 service unavailable', async () => {
+    let attempts = 0
+    const retryServer = createServer((req, res) => {
+      attempts++
+      if (attempts < 2) {
+        res.writeHead(503)
+        res.end()
+        return
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ recovered: true }))
+    })
+
+    const retryPort = await new Promise<number>((resolve) => {
+      retryServer.listen(0, '127.0.0.1', () => {
+        const addr = retryServer.address()
+        resolve(typeof addr === 'object' && addr ? addr.port : 0)
+      })
+    })
+
+    try {
+      const result = await makeRequest(
+        { method: 'GET', path: `http://127.0.0.1:${retryPort}/`, retries: 3 },
+        config,
+      )
+      expect(result.status).toBe(200)
+      expect(result.retried).toBe(1)
+    } finally {
+      retryServer.close()
+    }
+  })
+
+  test('returns 429 when retries exhausted', async () => {
+    const retryServer = createServer((req, res) => {
+      res.writeHead(429, { 'Retry-After': '0' })
+      res.end()
+    })
+
+    const retryPort = await new Promise<number>((resolve) => {
+      retryServer.listen(0, '127.0.0.1', () => {
+        const addr = retryServer.address()
+        resolve(typeof addr === 'object' && addr ? addr.port : 0)
+      })
+    })
+
+    try {
+      const result = await makeRequest(
+        { method: 'GET', path: `http://127.0.0.1:${retryPort}/`, retries: 1 },
+        config,
+      )
+      expect(result.status).toBe(429)
+    } finally {
+      retryServer.close()
+    }
+  })
+
+  test('no retry on non-retryable status', async () => {
+    let attempts = 0
+    const retryServer = createServer((req, res) => {
+      attempts++
+      res.writeHead(500)
+      res.end()
+    })
+
+    const retryPort = await new Promise<number>((resolve) => {
+      retryServer.listen(0, '127.0.0.1', () => {
+        const addr = retryServer.address()
+        resolve(typeof addr === 'object' && addr ? addr.port : 0)
+      })
+    })
+
+    try {
+      const result = await makeRequest(
+        { method: 'GET', path: `http://127.0.0.1:${retryPort}/`, retries: 3 },
+        config,
+      )
+      expect(result.status).toBe(500)
+      expect(attempts).toBe(1)
+      expect(result.retried).toBeUndefined()
+    } finally {
+      retryServer.close()
+    }
+  })
 })

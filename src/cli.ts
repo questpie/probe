@@ -4,9 +4,22 @@ import { defineCommand, runMain, showUsage } from 'citty'
 import { consola } from 'consola'
 
 const subCommandNames = new Set([
-  'start', 'stop', 'restart', 'ps', 'health', 'compose', 'logs',
-  'http', 'check', 'browser', 'record', 'replay', 'recordings',
-  'assert', 'init',
+  'start',
+  'stop',
+  'restart',
+  'ps',
+  'health',
+  'compose',
+  'logs',
+  'http',
+  'check',
+  'browser',
+  'record',
+  'replay',
+  'recordings',
+  'assert',
+  'init',
+  'doctor',
 ])
 
 const main = defineCommand({
@@ -31,6 +44,7 @@ const main = defineCommand({
     recordings: () => import('./commands/recordings').then((m) => m.default),
     assert: () => import('./commands/assert').then((m) => m.default),
     init: () => import('./commands/init').then((m) => m.default),
+    doctor: () => import('./commands/doctor').then((m) => m.default),
   },
   async run({ cmd, rawArgs }) {
     // Don't show onboarding if a subcommand was invoked
@@ -48,9 +62,7 @@ const main = defineCommand({
     }
 
     consola.log('')
-    consola.log(
-      '\x1b[1m\x1b[38;2;183;0;255m  QUESTPIE Probe\x1b[0m  \x1b[2mv0.1.2\x1b[0m',
-    )
+    consola.log('\x1b[1m\x1b[38;2;183;0;255m  QUESTPIE Probe\x1b[0m  \x1b[2mv0.1.2\x1b[0m')
     consola.log('  Dev testing CLI for AI coding agents')
     consola.log('')
     consola.log('  \x1b[1mGet started:\x1b[0m')

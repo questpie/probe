@@ -41,13 +41,23 @@ export async function startProcess(opts: StartOptions): Promise<{ pid: number }>
 
   await ensureLogsDir()
 
-  const [command, ...args] = opts.cmd.split(/\s+/)
-  if (!command) throw new Error('Empty command')
+  if (!opts.cmd.trim()) throw new Error('Empty command. Provide a command to run (e.g. "bun dev")')
+
+  // Use shell mode when command contains shell operators (&&, ||, |, ;, >, <)
+  // This handles "cd dir && bunx ..." patterns correctly
+  const useShell = /[&|;><]/.test(opts.cmd)
+  const spawnArgs: [string, string[]] = useShell
+    ? ['sh', ['-c', opts.cmd]]
+    : (() => {
+        const parts = opts.cmd.split(/\s+/)
+        const cmd = parts[0] ?? opts.cmd
+        return [cmd, parts.slice(1)] as [string, string[]]
+      })()
 
   if (opts.ready) {
     // Use piped stdio for ready detection, then detach
     const logWriter = createLogWriter(opts.name)
-    const child = spawn(command, args, {
+    const child = spawn(spawnArgs[0], spawnArgs[1], {
       cwd: opts.cwd ?? process.cwd(),
       env: { ...process.env, ...opts.env },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -79,7 +89,7 @@ export async function startProcess(opts: StartOptions): Promise<{ pid: number }>
   // No ready pattern — use file descriptors directly so CLI exits immediately
   const logPath = getLogPath(opts.name)
   const logFd = openSync(logPath, 'a')
-  const child = spawn(command, args, {
+  const child = spawn(spawnArgs[0], spawnArgs[1], {
     cwd: opts.cwd ?? process.cwd(),
     env: { ...process.env, ...opts.env },
     stdio: ['ignore', logFd, logFd],
@@ -119,46 +129,62 @@ function waitForReady(
   return new Promise((resolve, reject) => {
     const regex = new RegExp(pattern)
     let resolved = false
+    const outputLines: string[] = []
 
     const timer = setTimeout(() => {
       if (!resolved) {
         resolved = true
-        reject(new Error(`Timeout waiting for ready pattern "${pattern}" after ${timeoutMs}ms`))
+        const lastOutput = outputLines.slice(-10).join('\n')
+        const hints = [
+          `Ready pattern: /${pattern}/`,
+          lastOutput ? `Last output:\n${lastOutput}` : 'No output was captured from the process.',
+          'Hint: check that your ready pattern matches the actual process output.',
+          'Hint: use --timeout to increase the wait time.',
+        ]
+        reject(
+          new Error(`Timeout waiting for ready pattern after ${timeoutMs}ms.\n${hints.join('\n')}`),
+        )
       }
     }, timeoutMs)
 
-    const onData = (chunk: Buffer) => {
+    const checkPattern = (chunk: Buffer) => {
       if (resolved) return
       const text = chunk.toString('utf-8')
+      for (const line of text.split('\n')) {
+        if (line.trim()) outputLines.push(line)
+      }
       if (regex.test(text)) {
         resolved = true
         clearTimeout(timer)
-        child.stdout?.off('data', onData)
-        child.stderr?.off('data', onStderrData)
+        child.stdout?.removeAllListeners('data')
+        child.stderr?.removeAllListeners('data')
         resolve()
       }
     }
 
-    const onStderrData = (chunk: Buffer) => {
-      if (resolved) return
-      const text = chunk.toString('utf-8')
-      if (regex.test(text)) {
-        resolved = true
-        clearTimeout(timer)
-        child.stdout?.off('data', onData)
-        child.stderr?.off('data', onStderrData)
-        resolve()
-      }
-    }
-
-    child.stdout?.on('data', onData)
-    child.stderr?.on('data', onStderrData)
+    child.stdout?.on('data', checkPattern)
+    child.stderr?.on('data', checkPattern)
 
     child.on('exit', (code) => {
       if (!resolved) {
         resolved = true
         clearTimeout(timer)
-        reject(new Error(`Process exited with code ${code} before ready`))
+        const lastOutput = outputLines.slice(-10).join('\n')
+        const hints: string[] = [
+          `Process exited with code ${code} before the ready pattern was matched.`,
+          `Ready pattern: /${pattern}/`,
+        ]
+        if (lastOutput) {
+          hints.push(`Last output:\n${lastOutput}`)
+        }
+        if (code === 0) {
+          hints.push(
+            'The process exited cleanly (code 0) but never printed the ready pattern.',
+            'This often happens with shell commands like "cd dir && cmd" — the shell exits while the child continues.',
+            'Fix: use the --cwd flag instead of "cd" in the command, or remove the ready pattern.',
+          )
+        }
+        reject(new Error(hints.join('\n')))
       }
     })
   })
