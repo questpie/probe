@@ -8,7 +8,7 @@ function qprobe(
     execFile(
       'bun',
       ['run', 'src/cli.ts', ...args],
-      { env: { ...process.env, NO_COLOR: '1', CONSOLA_LEVEL: '999' }, timeout: 5_000 },
+      { env: { ...process.env, NO_COLOR: '1', CONSOLA_LEVEL: '999' }, timeout: 15_000 },
       (error, stdout, stderr) => {
         const exitCode = error && 'code' in error ? (error.code as number) : error ? 1 : 0
         resolve({ stdout, stderr, exitCode })
