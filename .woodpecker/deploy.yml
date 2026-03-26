@@ -1,7 +1,9 @@
 when:
-  branch: main
-  event: push
-  path: "site/**"
+  - event: push
+    branch: main
+    path: "site/**"
+  - event: manual
+    branch: main
 
 steps:
   build:
