@@ -1,6 +1,6 @@
 {
   "name": "@questpie/probe",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Dev testing CLI for AI coding agents",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,11 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "skills", "templates"],
+  "files": [
+    "dist",
+    "skills",
+    "templates"
+  ],
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
