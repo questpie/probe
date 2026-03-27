@@ -1,19 +1,23 @@
 import { describe, expect, test } from 'bun:test'
+import { execFile } from 'node:child_process'
 
-async function qprobe(
+function qprobe(
   ...args: string[]
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn(['bun', 'run', 'src/cli.ts', ...args], {
-    env: { ...process.env, NO_COLOR: '1', CONSOLA_LEVEL: '999' },
-    stdout: 'pipe',
-    stderr: 'pipe',
+  return new Promise((resolve) => {
+    const child = execFile(
+      'bun',
+      ['run', 'src/cli.ts', ...args],
+      { env: { ...process.env, NO_COLOR: '1', CONSOLA_LEVEL: '999' }, timeout: 30_000, maxBuffer: 10 * 1024 * 1024 },
+      (error, stdout, stderr) => {
+        let exitCode = 0
+        if (error) {
+          exitCode = typeof error.code === 'number' ? error.code : (child.exitCode ?? 1)
+        }
+        resolve({ stdout: stdout ?? '', stderr: stderr ?? '', exitCode })
+      },
+    )
   })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ])
-  const exitCode = await proc.exited
-  return { stdout, stderr, exitCode }
 }
 
 function out(r: { stdout: string; stderr: string }): string {
