@@ -14,7 +14,7 @@ function qprobe(
       ['run', 'src/cli.ts', ...args],
       { env: { ...process.env, NO_COLOR: '1', CONSOLA_LEVEL: '999' }, timeout: 30_000 },
       (error, stdout, stderr) => {
-        const exitCode = error && 'code' in error ? (error.code as number) : error ? 1 : 0
+        const exitCode = error?.code != null ? (error.code as number) : error ? 1 : 0
         resolve({ stdout, stderr, exitCode })
       },
     )

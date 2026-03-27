@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { openSync, writeSync } from 'node:fs'
+import { openSync } from 'node:fs'
 import { createLogWriter } from './log-writer'
 import type { ProcessState } from './state'
 import {
@@ -76,15 +76,13 @@ export async function startProcess(opts: StartOptions): Promise<{ pid: number }>
     const timeoutMs = opts.timeout ?? 60_000
     await waitForReady(child, opts.ready, timeoutMs)
 
-    // Redirect stdout/stderr to log file so child survives CLI exit
-    const logPath = getLogPath(opts.name)
-    const logFd = openSync(logPath, 'a')
-    // Stop piping to our listeners
+    // Detach: remove listeners and let the child's stdout drain naturally.
+    // We do NOT destroy() the streams (that sends SIGPIPE on some platforms).
+    // Instead, just remove references so CLI can exit while child continues.
     child.stdout?.removeAllListeners()
     child.stderr?.removeAllListeners()
-    // Pipe remaining output to log file (keeps child's stdout open — no SIGPIPE)
-    child.stdout?.on('data', (chunk: Buffer) => writeSync(logFd, chunk))
-    child.stderr?.on('data', (chunk: Buffer) => writeSync(logFd, chunk))
+    child.stdout?.resume() // drain any buffered data (prevents backpressure kill)
+    child.stderr?.resume()
     child.unref()
 
     return { pid }
