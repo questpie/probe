@@ -2,6 +2,8 @@
 
 Powered by `agent-browser` (default) or `playwright-cli` (optional). Uses accessibility tree snapshots with compact `@e` refs.
 
+> For full agent-browser internals (ref lifecycle, session management, auth, network HAR, diffs, advanced features), see `references/agent-browser.md`.
+
 ## Navigation
 
 ```bash

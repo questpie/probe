@@ -1,6 +1,6 @@
 ---
 name: qprobe
-description: "QUESTPIE Probe — dev testing CLI for AI coding agents. Orchestrates dev servers, aggregates logs, controls browsers, sends HTTP requests, records and replays tests. Use when: testing web apps, starting dev servers, checking logs, debugging runtime errors, recording test flows, making API calls against running servers, checking browser console or network tab, composing multi-service stacks. Triggers: 'test this app', 'start the server', 'check if it works', 'what are the logs', 'any errors?', 'record a test', 'run the tests', 'call the API', 'check the network tab', 'start the database', 'compose up', 'is the server running', 'replay tests', 'check for regressions'. Even if the user doesn't mention qprobe by name, use this skill when they want to test, debug, or verify a running web application."
+description: "QUESTPIE Probe — dev testing CLI for AI coding agents. Start servers, test APIs, control browsers via agent-browser, record and replay regression tests with zero tokens. Use when testing web apps, starting dev servers, reading logs, debugging errors, making API calls, checking browser console/network, or composing multi-service stacks."
 ---
 
 # QUESTPIE Probe
@@ -223,6 +223,7 @@ Read the reference file for the command group you need:
 - **HTTP requests & API testing** → `references/http.md`
 - **Quick health check** (one-shot status + services) → `references/check.md`
 - **Browser control** (snapshot, click, fill, console, network) → `references/browser.md`
+- **agent-browser driver** (refs, sessions, auth, network HAR, diffs, advanced features) → `references/agent-browser.md`
 - **Service orchestration** (compose up/down, dependencies) → `references/compose.md`
 - **Recording & replay** (test capture, Playwright codegen) → `references/recording.md`
 - **Assertions** (text, element, URL, status, errors) → `references/assertions.md`
