@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { loadProbeConfig } from '../core/config'
+import { currentSessionPaths } from '../core/session'
 
 export interface RecordedAction {
   command: string
@@ -17,20 +18,25 @@ export interface Recording {
   actions: RecordedAction[]
 }
 
-const STATE_FILE = 'tmp/qprobe/state/recording.json'
+// Resolved per-call (not at module load) so QPROBE_SESSION / QPROBE_ROOT_DIR
+// take effect for the current CLI invocation. Each session gets its own active
+// recording, so concurrent sessions can record simultaneously.
+export function recordingStateFile(): string {
+  return join(currentSessionPaths().state, 'recording.json')
+}
 
 let activeRecording: Recording | null = null
 
 export async function startRecording(name: string): Promise<void> {
   // Check disk first — each CLI call is a separate process
-  const existing = activeRecording ?? await loadActiveRecording()
+  const existing = activeRecording ?? (await loadActiveRecording())
   if (existing) {
     const startedAt = new Date(existing.startedAt)
     const elapsed = Date.now() - startedAt.getTime()
     const mins = Math.floor(elapsed / 60_000)
     const age = mins > 0 ? ` (started ${mins}m ago)` : ''
     throw new Error(
-      `Already recording "${existing.name}"${age}. Run "qprobe record stop" or "qprobe record cancel" first.`
+      `Already recording "${existing.name}"${age}. Run "qprobe record stop" or "qprobe record cancel" first.`,
     )
   }
 
@@ -42,15 +48,17 @@ export async function startRecording(name: string): Promise<void> {
     actions: [],
   }
 
-  await mkdir('tmp/qprobe/state', { recursive: true })
-  await writeFile(STATE_FILE, JSON.stringify(activeRecording, null, 2), 'utf-8')
+  const stateFile = recordingStateFile()
+  await mkdir(currentSessionPaths().state, { recursive: true })
+  await writeFile(stateFile, JSON.stringify(activeRecording, null, 2), 'utf-8')
 }
 
 export function recordAction(command: string, args: string[]): void {
+  const stateFile = recordingStateFile()
   // Load from disk if not in memory (each CLI call is a separate process)
   if (!activeRecording) {
     try {
-      const content = readFileSync(STATE_FILE, 'utf-8')
+      const content = readFileSync(stateFile, 'utf-8')
       activeRecording = JSON.parse(content) as Recording
     } catch {
       return // no active recording
@@ -61,11 +69,11 @@ export function recordAction(command: string, args: string[]): void {
     args,
     timestamp: new Date().toISOString(),
   })
-  void writeFile(STATE_FILE, JSON.stringify(activeRecording, null, 2), 'utf-8')
+  void writeFile(stateFile, JSON.stringify(activeRecording, null, 2), 'utf-8')
 }
 
 export async function stopRecording(): Promise<Recording> {
-  const recording = activeRecording ?? await loadActiveRecording()
+  const recording = activeRecording ?? (await loadActiveRecording())
   if (!recording) throw new Error('No active recording')
 
   recording.finishedAt = new Date().toISOString()
@@ -81,7 +89,7 @@ export async function stopRecording(): Promise<Recording> {
   activeRecording = null
   try {
     const { rm } = await import('node:fs/promises')
-    await rm(STATE_FILE)
+    await rm(recordingStateFile())
   } catch {
     // ignore
   }
@@ -93,7 +101,7 @@ export async function cancelRecording(): Promise<void> {
   activeRecording = null
   try {
     const { rm } = await import('node:fs/promises')
-    await rm(STATE_FILE)
+    await rm(recordingStateFile())
   } catch {
     // ignore
   }
@@ -107,7 +115,7 @@ export async function isRecording(): Promise<boolean> {
 
 async function loadActiveRecording(): Promise<Recording | null> {
   try {
-    const content = await readFile(STATE_FILE, 'utf-8')
+    const content = await readFile(recordingStateFile(), 'utf-8')
     activeRecording = JSON.parse(content) as Recording
     return activeRecording
   } catch {

@@ -1,11 +1,11 @@
 import type { CommandDef } from 'citty'
 import { defineCommand } from 'citty'
-import { loadProbeConfig, resolveBaseUrl } from '../core/config'
-import type { BrowserDriver } from '../browser/types'
 import { AgentBrowserDriver } from '../browser/agent-browser'
+import type { BrowserDriver } from '../browser/types'
+import { loadProbeConfig, resolveBaseUrl } from '../core/config'
 import { recordAction } from '../testing/recorder'
-import { error, info, json as jsonOut, log, success } from '../utils/output'
 import { parseDuration } from '../utils/duration'
+import { error, info, json as jsonOut, log, success } from '../utils/output'
 
 function record(command: string, ...args: string[]): void {
   recordAction(`browser ${command}`, args)
@@ -25,7 +25,9 @@ async function getDriver(args: {
   }
 
   return new AgentBrowserDriver({
-    session: args.session ?? config.browser?.session ?? 'qprobe',
+    // Leave undefined when neither CLI flag nor config sets it, so the driver
+    // derives a session-namespaced default (qprobe-<sessionId>).
+    session: args.session ?? config.browser?.session,
     headed: args.headed ?? !(config.browser?.headless ?? true),
     baseUrl: resolveBaseUrl(config),
   })
@@ -264,7 +266,11 @@ const uncheckCmd = defineCommand({
 const press = defineCommand({
   meta: { name: 'press', description: 'Press keyboard key' },
   args: {
-    key: { type: 'positional', description: 'Key to press (Enter, Tab, Escape...)', required: true },
+    key: {
+      type: 'positional',
+      description: 'Key to press (Enter, Tab, Escape...)',
+      required: true,
+    },
     driver: { type: 'string' },
     headed: { type: 'boolean' },
     session: { type: 'string' },
