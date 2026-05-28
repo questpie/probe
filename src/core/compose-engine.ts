@@ -1,6 +1,7 @@
 import { ofetch } from 'ofetch'
 import { warn } from '../utils/output'
 import type { ServiceConfig } from './config'
+import { withLock } from './lock'
 import {
   type PortlessDecision,
   isPortlessAvailable,
@@ -85,6 +86,15 @@ export function resolveDependencyOrder(
 }
 
 export async function composeUp(
+  services: Record<string, ServiceConfig>,
+  opts: { only?: string[]; skip?: string[]; noHealth?: boolean; portless?: boolean },
+): Promise<string[]> {
+  // Serialize compose runs per session so two concurrent `compose up` calls
+  // can't double-spawn the same services.
+  return withLock('compose', () => runComposeUp(services, opts))
+}
+
+async function runComposeUp(
   services: Record<string, ServiceConfig>,
   opts: { only?: string[]; skip?: string[]; noHealth?: boolean; portless?: boolean },
 ): Promise<string[]> {
