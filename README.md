@@ -62,7 +62,7 @@ qprobe assert no-errors
 | `qprobe start` | Start a background process with ready detection |
 | `qprobe stop` | Stop a process (SIGTERM → SIGKILL) |
 | `qprobe restart` | Restart with saved config |
-| `qprobe ps` | List running processes |
+| `qprobe ps` | List running processes (`--all` for every session + shared) |
 | `qprobe health` | Poll URL until it responds |
 | `qprobe logs` | Read logs with grep, level, follow |
 | `qprobe http` | HTTP requests with assertions |
@@ -87,6 +87,8 @@ export default defineConfig({
       cmd: 'docker compose up postgres',
       ready: 'ready to accept connections',
       health: 'http://localhost:5432',
+      shared: true,                       // reuse one DB across agents/worktrees
+      setup: ['bun db:migrate'],          // run once after healthy (per scope)
     },
     server: {
       cmd: 'bun dev',
@@ -94,17 +96,41 @@ export default defineConfig({
       port: 3000,
       health: '/api/health',
       depends: ['db'],
+      env: { DATABASE_URL: 'postgres://localhost:5432/app_${SESSION}' },
     },
   },
-  browser: {
-    driver: 'agent-browser',
-    baseUrl: 'http://localhost:3000',
+  session: {
+    portless: true,                       // default; set false to opt out
   },
-  http: {
-    baseUrl: 'http://localhost:3000',
-  },
+  browser: { driver: 'agent-browser', baseUrl: 'http://localhost:3000' },
+  http: { baseUrl: 'http://localhost:3000' },
 })
 ```
+
+## Multi-agent & sessions
+
+Probe isolates state per **session** so multiple agents/worktrees can run
+concurrently without colliding. Each session gets its own
+`tmp/qprobe/sessions/<id>/` for PIDs, logs, snapshots, and recordings.
+
+- **Auto session id** — derived from the git worktree (`<basename>-<hash>`), so two
+  worktrees of the same repo isolate automatically. Override with `QPROBE_SESSION`.
+- **`shared: true`** — a service (e.g. Postgres) lives in a shared scope, is reused
+  if already running, and only stops when the last session releases it (refcounted).
+- **`setup: [...]`** — commands run once after a service is healthy (migrations,
+  seeds), idempotent per scope. `${SESSION}` / `${PORT}` interpolation works in
+  `cmd`, `env`, and `setup`.
+- **`qprobe ps --all`** — see processes across every session plus the shared scope.
+- **portless** — on by default for stable per-worktree `*.localhost` URLs; falls back
+  to localhost/port if the binary is absent. Opt out via `session.portless: false`.
+
+### Environment variables
+
+| Var | Effect |
+|-----|--------|
+| `QPROBE_SESSION` | Explicit session id (overrides the auto worktree id) |
+| `QPROBE_ROOT_DIR` | Base dir for runtime state (default `tmp/qprobe`) |
+| `QPROBE_PORTLESS` | `1` to force portless on, `0` to opt out |
 
 ## License
 
