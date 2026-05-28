@@ -7,6 +7,7 @@ import {
   isPortlessAvailable,
   isPortlessEnabled,
   isPortlessExplicit,
+  portlessGetUrl,
   portlessHealthUrl,
   resolvePortlessMode,
   wrapCommand,
@@ -161,14 +162,18 @@ async function runComposeUp(
     started.push(name)
 
     if (!opts.noHealth && svc.health) {
-      // When portless manages the port, the service is served at its *.localhost
-      // URL rather than localhost:<port>. (best-effort — verify with real portless)
-      const healthUrl =
-        portless.mode === 'use'
-          ? portlessHealthUrl(name, svc.health)
-          : svc.health.startsWith('http')
-            ? svc.health
-            : `http://localhost:${svc.port ?? 3000}${svc.health}`
+      // An absolute health URL is always respected as-is. For a path, portless
+      // mode resolves the real base via `portless get` (port- and worktree-aware),
+      // falling back to the naive *.localhost URL; otherwise localhost:<port>.
+      let healthUrl: string
+      if (svc.health.startsWith('http')) {
+        healthUrl = svc.health
+      } else if (portless.mode === 'use') {
+        const base = await portlessGetUrl(name)
+        healthUrl = base ? `${base}${svc.health}` : portlessHealthUrl(name, svc.health)
+      } else {
+        healthUrl = `http://localhost:${svc.port ?? 3000}${svc.health}`
+      }
 
       await waitForHealth(healthUrl, svc.timeout ?? 30_000)
     }

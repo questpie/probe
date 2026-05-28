@@ -3,6 +3,7 @@ import {
   isPortlessAvailable,
   isPortlessEnabled,
   isPortlessExplicit,
+  portlessGetUrl,
   portlessHealthUrl,
   resolvePortlessMode,
   wrapCommand,
@@ -81,5 +82,27 @@ describe('isPortlessAvailable', () => {
   test('uses the injected checker', async () => {
     expect(await isPortlessAvailable(async () => true)).toBe(true)
     expect(await isPortlessAvailable(async () => false)).toBe(false)
+  })
+})
+
+describe('portlessGetUrl', () => {
+  test('returns the URL printed by `portless get` (port + worktree accurate)', async () => {
+    const run = async (args: string[]): Promise<string> => {
+      expect(args).toEqual(['get', 'web'])
+      return 'https://web.localhost:1355\n'
+    }
+    expect(await portlessGetUrl('web', run)).toBe('https://web.localhost:1355')
+  })
+
+  test('returns null when output is not a url', async () => {
+    expect(await portlessGetUrl('web', async () => 'not found')).toBeNull()
+  })
+
+  test('returns null when the command throws', async () => {
+    expect(
+      await portlessGetUrl('web', async () => {
+        throw new Error('no proxy')
+      }),
+    ).toBeNull()
   })
 })

@@ -43,10 +43,36 @@ export function wrapCommand(name: string, cmd: string): string {
   return `portless ${name} ${cmd}`
 }
 
-/** The URL portless serves a named service at (HTTPS on the local CA). */
+/**
+ * Naive fallback URL (assumes the proxy is on 443 and no worktree subdomain).
+ * Prefer `portlessGetUrl`, which is port- and worktree-accurate.
+ */
 export function portlessHealthUrl(name: string, healthPathOrUrl: string): string {
   if (healthPathOrUrl.startsWith('http')) return healthPathOrUrl
   return `https://${name}.localhost${healthPathOrUrl}`
+}
+
+/**
+ * Ask portless for a service's canonical base URL (`portless get <name>`). This
+ * reflects the real proxy port (e.g. `:1355` when not on 443) and any worktree
+ * subdomain, so it is the source of truth for health checks. Returns `null` if
+ * the service isn't registered or portless errors. `run` is injectable for tests.
+ */
+export async function portlessGetUrl(
+  name: string,
+  run: (args: string[]) => Promise<string> = defaultRun,
+): Promise<string | null> {
+  try {
+    const out = (await run(['get', name])).trim()
+    return out.startsWith('http') ? out : null
+  } catch {
+    return null
+  }
+}
+
+async function defaultRun(args: string[]): Promise<string> {
+  const res = await x('portless', args, { throwOnError: true })
+  return res.stdout
 }
 
 /** Probe for the portless binary. `check` is injectable for tests. */
