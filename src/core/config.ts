@@ -45,7 +45,8 @@ const defaults: ProbeConfig = {
   browser: {
     driver: 'agent-browser',
     headless: true,
-    session: 'qprobe',
+    // session intentionally omitted — the browser driver derives a
+    // session-namespaced default (qprobe-<sessionId>) when unset.
   },
   logs: {
     dir: 'tmp/qprobe/logs',

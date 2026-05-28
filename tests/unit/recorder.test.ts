@@ -1,13 +1,33 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { rm } from 'node:fs/promises'
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
+import { access, rm } from 'node:fs/promises'
+import { resetSessionCache } from '../../src/core/session'
 import {
   cancelRecording,
   getActiveRecording,
   isRecording,
   recordAction,
+  recordingStateFile,
   startRecording,
   stopRecording,
 } from '../../src/testing/recorder'
+
+// Pin a deterministic session id so the recording-state path is stable and
+// isolated from whatever git worktree the suite runs in.
+const SESSION = 'rec-test'
+const SESSION_STATE = `tmp/qprobe/sessions/${SESSION}/state`
+let prevSession: string | undefined
+
+beforeAll(() => {
+  prevSession = process.env.QPROBE_SESSION
+  process.env.QPROBE_SESSION = SESSION
+  resetSessionCache()
+})
+
+afterAll(() => {
+  if (prevSession === undefined) delete process.env.QPROBE_SESSION
+  else process.env.QPROBE_SESSION = prevSession
+  resetSessionCache()
+})
 
 afterEach(async () => {
   await cancelRecording()
@@ -63,5 +83,33 @@ describe('recorder', () => {
 
   test('stop without start throws', async () => {
     await expect(stopRecording()).rejects.toThrow('No active recording')
+  })
+})
+
+describe('recorder session namespacing', () => {
+  test('recordingStateFile lives under the active session state dir', () => {
+    expect(recordingStateFile()).toBe(`${SESSION_STATE}/recording.json`)
+  })
+
+  test('startRecording writes recording.json under the session state dir', async () => {
+    await startRecording('namespaced')
+    // The state file for THIS session must exist...
+    await access(`${SESSION_STATE}/recording.json`)
+    // ...and the legacy global path must NOT be used.
+    await expect(access('tmp/qprobe/state/recording.json')).rejects.toThrow()
+  })
+
+  test('different sessions resolve to different recording paths', () => {
+    const a = recordingStateFile()
+    process.env.QPROBE_SESSION = 'rec-test-other'
+    resetSessionCache()
+    try {
+      const b = recordingStateFile()
+      expect(b).toBe('tmp/qprobe/sessions/rec-test-other/state/recording.json')
+      expect(b).not.toBe(a)
+    } finally {
+      process.env.QPROBE_SESSION = SESSION
+      resetSessionCache()
+    }
   })
 })

@@ -1,6 +1,7 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { x } from 'tinyexec'
+import { currentSessionPaths, getSessionId } from '../core/session'
 import type {
   BrowserDriver,
   ConsoleEntry,
@@ -12,9 +13,6 @@ import type {
   SnapshotOpts,
   WaitOpts,
 } from './types'
-
-const SNAPSHOTS_DIR = 'tmp/qprobe/snapshots'
-const SHOTS_DIR = 'tmp/qprobe/shots'
 
 interface AgentBrowserResponse {
   success: boolean
@@ -32,17 +30,46 @@ async function ensureDir(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true })
 }
 
-let shotCounter = 0
-
 export class AgentBrowserDriver implements BrowserDriver {
   private readonly session: string
   private readonly headed: boolean
   private readonly baseUrl: string | undefined
 
   constructor(opts: AgentBrowserOptions = {}) {
-    this.session = opts.session ?? 'qprobe'
+    // Default the browser session to a value derived from the active qprobe
+    // session so concurrent agents/worktrees don't share one browser session.
+    this.session = opts.session ?? `qprobe-${getSessionId()}`
     this.headed = opts.headed ?? false
     this.baseUrl = opts.baseUrl
+  }
+
+  /** The resolved agent-browser session name (derived default or explicit). */
+  get sessionName(): string {
+    return this.session
+  }
+
+  /**
+   * Resolve the next `shot-NNN.png` path under the current session's shots dir.
+   * Scans existing files so numbering is correct per-session and stable across
+   * separate CLI invocations.
+   */
+  async nextShotPath(): Promise<string> {
+    const shotsDir = currentSessionPaths().shots
+    let maxIndex = 0
+    try {
+      const files = await readdir(shotsDir)
+      for (const file of files) {
+        const match = /^shot-(\d+)\.png$/.exec(file)
+        if (match?.[1]) {
+          const n = Number.parseInt(match[1], 10)
+          if (n > maxIndex) maxIndex = n
+        }
+      }
+    } catch {
+      // shots dir doesn't exist yet → start at 1
+    }
+    const next = maxIndex + 1
+    return join(shotsDir, `shot-${String(next).padStart(3, '0')}.png`)
   }
 
   private async run(...args: string[]): Promise<AgentBrowserResponse> {
@@ -125,9 +152,10 @@ export class AgentBrowserDriver implements BrowserDriver {
     const data = await this.runOrThrow(...args)
     const snapshotText = String(data['snapshot'] ?? data['text'] ?? '')
 
-    await ensureDir(SNAPSHOTS_DIR)
-    const currentPath = join(SNAPSHOTS_DIR, 'current.yaml')
-    const previousPath = join(SNAPSHOTS_DIR, 'previous.yaml')
+    const snapshotsDir = currentSessionPaths().snapshots
+    await ensureDir(snapshotsDir)
+    const currentPath = join(snapshotsDir, 'current.yaml')
+    const previousPath = join(snapshotsDir, 'previous.yaml')
 
     try {
       const existing = await readFile(currentPath, 'utf-8')
@@ -201,10 +229,9 @@ export class AgentBrowserDriver implements BrowserDriver {
   }
 
   async screenshot(opts?: ScreenshotOpts): Promise<string> {
-    await ensureDir(SHOTS_DIR)
-    shotCounter++
-    const defaultPath = join(SHOTS_DIR, `shot-${String(shotCounter).padStart(3, '0')}.png`)
-    const targetPath = opts?.path ?? defaultPath
+    const shotsDir = currentSessionPaths().shots
+    await ensureDir(shotsDir)
+    const targetPath = opts?.path ?? (await this.nextShotPath())
 
     const args: string[] = ['screenshot', targetPath]
     if (opts?.annotate) args.push('--annotate')
