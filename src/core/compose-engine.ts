@@ -2,6 +2,7 @@ import { ofetch } from 'ofetch'
 import type { ServiceConfig } from './config'
 import { isProcessAlive, startProcess, stopProcess } from './process-manager'
 import { getSessionId } from './session'
+import { interpolate, runSetup } from './setup-hooks'
 import { addRef, removeRef } from './shared-service'
 import { readPid } from './state'
 
@@ -82,6 +83,17 @@ export async function composeUp(
 
   for (const name of order) {
     const svc = services[name]!
+    const scope = svc.shared ? 'shared' : 'session'
+
+    // ${SESSION} / ${PORT} interpolation for cmd, env, and setup commands.
+    const vars: Record<string, string> = {
+      SESSION: getSessionId(),
+      PORT: svc.port !== undefined ? String(svc.port) : '',
+    }
+    const cmd = interpolate(svc.cmd, vars)
+    const env = svc.env
+      ? Object.fromEntries(Object.entries(svc.env).map(([k, v]) => [k, interpolate(v, vars)]))
+      : undefined
 
     if (svc.shared) {
       // Shared service: reuse if already running in the shared scope, otherwise
@@ -91,11 +103,11 @@ export async function composeUp(
       if (!alreadyRunning) {
         await startProcess({
           name,
-          cmd: svc.cmd,
+          cmd,
           ready: svc.ready,
           timeout: svc.timeout ? svc.timeout : 60_000,
           port: svc.port,
-          env: svc.env,
+          env,
           cwd: svc.cwd,
           shared: true,
         })
@@ -104,11 +116,11 @@ export async function composeUp(
     } else {
       await startProcess({
         name,
-        cmd: svc.cmd,
+        cmd,
         ready: svc.ready,
         timeout: svc.timeout ? svc.timeout : 60_000,
         port: svc.port,
-        env: svc.env,
+        env,
         cwd: svc.cwd,
       })
     }
@@ -120,6 +132,11 @@ export async function composeUp(
         : `http://localhost:${svc.port ?? 3000}${svc.health}`
 
       await waitForHealth(healthUrl, svc.timeout ?? 30_000)
+    }
+
+    // Run setup hooks once the service is healthy (idempotent per scope).
+    if (svc.setup && svc.setup.length > 0) {
+      await runSetup(name, svc.setup, { scope, vars })
     }
   }
 

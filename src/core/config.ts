@@ -18,6 +18,11 @@ export interface ServiceConfig {
    * stopped once the last referencing session releases it.
    */
   shared?: boolean
+  /**
+   * Commands to run once after the service is healthy (e.g. migrations, seeds).
+   * Idempotent per scope via a marker. Supports `${SESSION}` / `${PORT}` interpolation.
+   */
+  setup?: string[]
 }
 
 export interface BrowserConfig {
@@ -111,6 +116,7 @@ const KNOWN_SERVICE_FIELDS = new Set([
   'stop',
   'timeout',
   'shared',
+  'setup',
 ])
 
 const SERVICE_FIELD_TYPOS: Record<string, string> = {
@@ -293,6 +299,15 @@ function validateService(
   // Validate shared
   if (svc.shared !== undefined && typeof svc.shared !== 'boolean') {
     errors.push(`Service "${name}": "shared" must be a boolean (true to share across sessions)`)
+  }
+
+  // Validate setup
+  if (svc.setup !== undefined) {
+    if (!Array.isArray(svc.setup) || svc.setup.some((c) => typeof c !== 'string')) {
+      errors.push(
+        `Service "${name}": "setup" must be an array of shell command strings\n    Example: setup: ['bun db:migrate', 'bun db:seed']`,
+      )
+    }
   }
 }
 
