@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { openSync } from 'node:fs'
 import { createLogWriter } from './log-writer'
-import type { ProcessState } from './state'
+import type { ProcessState, Scope } from './state'
 import {
   ensureLogsDir,
   getLogPath,
@@ -22,6 +22,8 @@ export interface StartOptions {
   port?: number
   env?: Record<string, string>
   cwd?: string
+  /** Store this process in the shared (cross-session) scope instead of the session scope. */
+  shared?: boolean
 }
 
 export function isProcessAlive(pid: number): boolean {
@@ -34,12 +36,13 @@ export function isProcessAlive(pid: number): boolean {
 }
 
 export async function startProcess(opts: StartOptions): Promise<{ pid: number }> {
-  const existingPid = await readPid(opts.name)
+  const scope: Scope = opts.shared ? 'shared' : 'session'
+  const existingPid = await readPid(opts.name, scope)
   if (existingPid && isProcessAlive(existingPid)) {
     throw new Error(`Process "${opts.name}" is already running (PID ${existingPid})`)
   }
 
-  await ensureLogsDir()
+  await ensureLogsDir(scope)
 
   if (!opts.cmd.trim()) throw new Error('Empty command. Provide a command to run (e.g. "bun dev")')
 
@@ -56,7 +59,7 @@ export async function startProcess(opts: StartOptions): Promise<{ pid: number }>
 
   if (opts.ready) {
     // Use piped stdio for ready detection, then detach
-    const logWriter = createLogWriter(opts.name)
+    const logWriter = createLogWriter(opts.name, scope)
     const child = spawn(spawnArgs[0], spawnArgs[1], {
       cwd: opts.cwd ?? process.cwd(),
       env: { ...process.env, ...opts.env },
@@ -70,8 +73,8 @@ export async function startProcess(opts: StartOptions): Promise<{ pid: number }>
     child.stdout?.on('data', logWriter.stdout)
     child.stderr?.on('data', logWriter.stderr)
 
-    await savePid(opts.name, pid)
-    await saveState(opts.name, makeState(opts, pid))
+    await savePid(opts.name, pid, scope)
+    await saveState(opts.name, makeState(opts, pid), scope)
 
     const timeoutMs = opts.timeout ?? 60_000
     await waitForReady(child, opts.ready, timeoutMs)
@@ -89,7 +92,7 @@ export async function startProcess(opts: StartOptions): Promise<{ pid: number }>
   }
 
   // No ready pattern — use file descriptors directly so CLI exits immediately
-  const logPath = getLogPath(opts.name)
+  const logPath = getLogPath(opts.name, scope)
   const logFd = openSync(logPath, 'a')
   const child = spawn(spawnArgs[0], spawnArgs[1], {
     cwd: opts.cwd ?? process.cwd(),
@@ -103,8 +106,8 @@ export async function startProcess(opts: StartOptions): Promise<{ pid: number }>
 
   child.unref()
 
-  await savePid(opts.name, pid)
-  await saveState(opts.name, makeState(opts, pid))
+  await savePid(opts.name, pid, scope)
+  await saveState(opts.name, makeState(opts, pid), scope)
 
   return { pid }
 }
@@ -192,13 +195,13 @@ function waitForReady(
   })
 }
 
-export async function stopProcess(name: string): Promise<void> {
-  const pid = await readPid(name)
+export async function stopProcess(name: string, scope: Scope = 'session'): Promise<void> {
+  const pid = await readPid(name, scope)
   if (!pid) throw new Error(`No PID file for "${name}"`)
 
   if (!isProcessAlive(pid)) {
-    await removePid(name)
-    await removeState(name)
+    await removePid(name, scope)
+    await removeState(name, scope)
     return
   }
 
@@ -230,8 +233,8 @@ export async function stopProcess(name: string): Promise<void> {
     }
   }
 
-  await removePid(name)
-  await removeState(name)
+  await removePid(name, scope)
+  await removeState(name, scope)
 }
 
 export async function stopAll(): Promise<string[]> {

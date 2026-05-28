@@ -12,6 +12,12 @@ export interface ServiceConfig {
   cwd?: string
   stop?: string
   timeout?: number
+  /**
+   * Treat this as a shared, cross-session service (e.g. a database). It lives in
+   * the shared scope (not per-session), is reused if already running, and is only
+   * stopped once the last referencing session releases it.
+   */
+  shared?: boolean
 }
 
 export interface BrowserConfig {
@@ -104,6 +110,7 @@ const KNOWN_SERVICE_FIELDS = new Set([
   'cwd',
   'stop',
   'timeout',
+  'shared',
 ])
 
 const SERVICE_FIELD_TYPOS: Record<string, string> = {
@@ -281,6 +288,11 @@ function validateService(
   // Validate timeout
   if (svc.timeout !== undefined && (typeof svc.timeout !== 'number' || svc.timeout <= 0)) {
     errors.push(`Service "${name}": "timeout" must be a positive number (ms)`)
+  }
+
+  // Validate shared
+  if (svc.shared !== undefined && typeof svc.shared !== 'boolean') {
+    errors.push(`Service "${name}": "shared" must be a boolean (true to share across sessions)`)
   }
 }
 

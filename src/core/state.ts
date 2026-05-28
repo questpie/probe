@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { currentSessionPaths } from './session'
+import { currentSessionPaths, currentSharedPaths } from './session'
 
 export interface ProcessState {
   name: string
@@ -14,87 +14,94 @@ export interface ProcessState {
   startedAt: string
 }
 
+/**
+ * Which storage scope a process lives in. `'session'` (default) is the current
+ * session's namespace; `'shared'` is the cross-session shared scope used by
+ * services flagged `shared: true`.
+ */
+export type Scope = 'session' | 'shared'
+
 // Runtime dirs are resolved per call (not at module load) so QPROBE_SESSION /
 // QPROBE_ROOT_DIR take effect for the current CLI invocation.
-function pidsDir(): string {
-  return currentSessionPaths().pids
-}
-
-function stateDir(): string {
-  return currentSessionPaths().state
-}
-
-function logsDir(): string {
-  return currentSessionPaths().logs
+function dirs(scope: Scope = 'session'): { pids: string; state: string; logs: string } {
+  const p = scope === 'shared' ? currentSharedPaths() : currentSessionPaths()
+  return { pids: p.pids, state: p.state, logs: p.logs }
 }
 
 async function ensureDir(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true })
 }
 
-export function getLogsDir(): string {
-  return logsDir()
+export function getLogsDir(scope: Scope = 'session'): string {
+  return dirs(scope).logs
 }
 
-export function getLogPath(name: string): string {
-  return join(logsDir(), `${name}.log`)
+export function getLogPath(name: string, scope: Scope = 'session'): string {
+  return join(dirs(scope).logs, `${name}.log`)
 }
 
-export async function savePid(name: string, pid: number): Promise<void> {
-  const dir = pidsDir()
+export async function savePid(name: string, pid: number, scope: Scope = 'session'): Promise<void> {
+  const dir = dirs(scope).pids
   await ensureDir(dir)
   await writeFile(join(dir, `${name}.pid`), String(pid), 'utf-8')
 }
 
-export async function readPid(name: string): Promise<number | null> {
+export async function readPid(name: string, scope: Scope = 'session'): Promise<number | null> {
   try {
-    const content = await readFile(join(pidsDir(), `${name}.pid`), 'utf-8')
+    const content = await readFile(join(dirs(scope).pids, `${name}.pid`), 'utf-8')
     return Number.parseInt(content.trim(), 10)
   } catch {
     return null
   }
 }
 
-export async function removePid(name: string): Promise<void> {
+export async function removePid(name: string, scope: Scope = 'session'): Promise<void> {
   try {
-    await rm(join(pidsDir(), `${name}.pid`))
+    await rm(join(dirs(scope).pids, `${name}.pid`))
   } catch {
     // ignore
   }
 }
 
-export async function saveState(name: string, state: ProcessState): Promise<void> {
-  const dir = stateDir()
+export async function saveState(
+  name: string,
+  state: ProcessState,
+  scope: Scope = 'session',
+): Promise<void> {
+  const dir = dirs(scope).state
   await ensureDir(dir)
   await writeFile(join(dir, `${name}.json`), JSON.stringify(state, null, 2), 'utf-8')
 }
 
-export async function readState(name: string): Promise<ProcessState | null> {
+export async function readState(
+  name: string,
+  scope: Scope = 'session',
+): Promise<ProcessState | null> {
   try {
-    const content = await readFile(join(stateDir(), `${name}.json`), 'utf-8')
+    const content = await readFile(join(dirs(scope).state, `${name}.json`), 'utf-8')
     return JSON.parse(content) as ProcessState
   } catch {
     return null
   }
 }
 
-export async function removeState(name: string): Promise<void> {
+export async function removeState(name: string, scope: Scope = 'session'): Promise<void> {
   try {
-    await rm(join(stateDir(), `${name}.json`))
+    await rm(join(dirs(scope).state, `${name}.json`))
   } catch {
     // ignore
   }
 }
 
-export async function listProcessNames(): Promise<string[]> {
+export async function listProcessNames(scope: Scope = 'session'): Promise<string[]> {
   try {
-    const files = await readdir(pidsDir())
+    const files = await readdir(dirs(scope).pids)
     return files.filter((f) => f.endsWith('.pid')).map((f) => f.replace('.pid', ''))
   } catch {
     return []
   }
 }
 
-export async function ensureLogsDir(): Promise<void> {
-  await ensureDir(logsDir())
+export async function ensureLogsDir(scope: Scope = 'session'): Promise<void> {
+  await ensureDir(dirs(scope).logs)
 }

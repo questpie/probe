@@ -1,5 +1,5 @@
 import { appendFile } from 'node:fs/promises'
-import { ensureLogsDir, getLogPath } from './state'
+import { type Scope, ensureLogsDir, getLogPath } from './state'
 
 type LogLevel = 'INFO' | 'ERROR' | 'WARN' | 'DEBUG'
 
@@ -15,9 +15,14 @@ function detectLevel(line: string): LogLevel {
   return 'INFO'
 }
 
-export async function writeLog(name: string, data: string, level?: LogLevel): Promise<void> {
-  await ensureLogsDir()
-  const logPath = getLogPath(name)
+export async function writeLog(
+  name: string,
+  data: string,
+  level?: LogLevel,
+  scope: Scope = 'session',
+): Promise<void> {
+  await ensureLogsDir(scope)
+  const logPath = getLogPath(name, scope)
   const lines = data.split('\n').filter((l) => l.length > 0)
   const formatted = lines
     .map((line) => {
@@ -31,18 +36,21 @@ export async function writeLog(name: string, data: string, level?: LogLevel): Pr
   }
 }
 
-export function createLogWriter(name: string): {
+export function createLogWriter(
+  name: string,
+  scope: Scope = 'session',
+): {
   stdout: (chunk: Buffer | string) => void
   stderr: (chunk: Buffer | string) => void
 } {
   return {
     stdout(chunk: Buffer | string) {
       const text = typeof chunk === 'string' ? chunk : chunk.toString('utf-8')
-      void writeLog(name, text)
+      void writeLog(name, text, undefined, scope)
     },
     stderr(chunk: Buffer | string) {
       const text = typeof chunk === 'string' ? chunk : chunk.toString('utf-8')
-      void writeLog(name, text, 'ERROR')
+      void writeLog(name, text, 'ERROR', scope)
     },
   }
 }

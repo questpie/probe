@@ -1,7 +1,9 @@
-import type { ServiceConfig } from './config'
-import { startProcess, stopProcess } from './process-manager'
-import { parseDuration } from '../utils/duration'
 import { ofetch } from 'ofetch'
+import type { ServiceConfig } from './config'
+import { isProcessAlive, startProcess, stopProcess } from './process-manager'
+import { getSessionId } from './session'
+import { addRef, removeRef } from './shared-service'
+import { readPid } from './state'
 
 export interface ComposeService {
   name: string
@@ -80,15 +82,36 @@ export async function composeUp(
 
   for (const name of order) {
     const svc = services[name]!
-    await startProcess({
-      name,
-      cmd: svc.cmd,
-      ready: svc.ready,
-      timeout: svc.timeout ? svc.timeout : 60_000,
-      port: svc.port,
-      env: svc.env,
-      cwd: svc.cwd,
-    })
+
+    if (svc.shared) {
+      // Shared service: reuse if already running in the shared scope, otherwise
+      // start it there. Either way, register this session's reference.
+      const existingPid = await readPid(name, 'shared')
+      const alreadyRunning = existingPid !== null && isProcessAlive(existingPid)
+      if (!alreadyRunning) {
+        await startProcess({
+          name,
+          cmd: svc.cmd,
+          ready: svc.ready,
+          timeout: svc.timeout ? svc.timeout : 60_000,
+          port: svc.port,
+          env: svc.env,
+          cwd: svc.cwd,
+          shared: true,
+        })
+      }
+      await addRef(name, getSessionId())
+    } else {
+      await startProcess({
+        name,
+        cmd: svc.cmd,
+        ready: svc.ready,
+        timeout: svc.timeout ? svc.timeout : 60_000,
+        port: svc.port,
+        env: svc.env,
+        cwd: svc.cwd,
+      })
+    }
     started.push(name)
 
     if (!opts.noHealth && svc.health) {
@@ -109,9 +132,19 @@ export async function composeDown(services: Record<string, ServiceConfig>): Prom
   const stopped: string[] = []
 
   for (const name of reversed) {
+    const svc = services[name]
     try {
-      await stopProcess(name)
-      stopped.push(name)
+      if (svc?.shared) {
+        // Release this session's reference; only stop once nobody else holds it.
+        const remaining = await removeRef(name, getSessionId())
+        if (remaining.length === 0) {
+          await stopProcess(name, 'shared')
+          stopped.push(name)
+        }
+      } else {
+        await stopProcess(name)
+        stopped.push(name)
+      }
     } catch {
       // may not be running
     }
