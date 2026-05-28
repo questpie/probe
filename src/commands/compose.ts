@@ -36,6 +36,7 @@ const up = defineCommand({
         only: args.only ? args.only.split(',') : undefined,
         skip: args.skip ? args.skip.split(',') : undefined,
         noHealth: args['no-health'],
+        portless: config.session?.portless,
       })
       success(`Started ${started.length} service(s): ${started.join(', ')}`)
     } catch (err) {
@@ -111,7 +112,7 @@ const restart = defineCommand({
         success(`Restarted "${args.name}"`)
       } else {
         await composeDown(config.services)
-        const started = await composeUp(config.services, {})
+        const started = await composeUp(config.services, { portless: config.session?.portless })
         success(`Restarted ${started.length} service(s)`)
       }
     } catch (err) {

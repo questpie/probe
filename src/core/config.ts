@@ -37,10 +37,18 @@ export interface HttpConfig {
   headers?: Record<string, string>
 }
 
+export interface SessionConfig {
+  /** Explicit session id. Overrides the auto worktree-derived id. */
+  id?: string
+  /** Use portless for per-worktree stable URLs. Defaults to true (opt-out). */
+  portless?: boolean
+}
+
 export interface ProbeConfig {
   services?: Record<string, ServiceConfig>
   browser?: BrowserConfig
   http?: HttpConfig
+  session?: SessionConfig
   logs?: {
     dir?: string
     maxSize?: string
@@ -144,7 +152,7 @@ const SERVICE_FIELD_TYPOS: Record<string, string> = {
   timeoutMs: 'timeout',
 }
 
-const KNOWN_TOP_LEVEL_FIELDS = new Set(['services', 'browser', 'http', 'logs', 'tests'])
+const KNOWN_TOP_LEVEL_FIELDS = new Set(['services', 'browser', 'http', 'session', 'logs', 'tests'])
 
 const KNOWN_BROWSER_DRIVERS = new Set(['agent-browser', 'playwright'])
 
@@ -201,6 +209,16 @@ function validateConfig(config: ProbeConfig): void {
       (typeof config.tests.timeout !== 'number' || config.tests.timeout <= 0)
     ) {
       errors.push('Invalid tests.timeout: must be a positive number (ms)')
+    }
+  }
+
+  // Validate session config
+  if (config.session) {
+    if (config.session.portless !== undefined && typeof config.session.portless !== 'boolean') {
+      errors.push('Invalid session.portless: must be a boolean (false to opt out of portless)')
+    }
+    if (config.session.id !== undefined && typeof config.session.id !== 'string') {
+      errors.push('Invalid session.id: must be a string')
     }
   }
 

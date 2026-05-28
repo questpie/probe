@@ -106,7 +106,7 @@ describe('composeUp reuse (shared)', () => {
     setSession('sess-b')
     const started = await composeUp(
       { db: { cmd: 'should-not-run', shared: true } },
-      { noHealth: true },
+      { noHealth: true, portless: false },
     )
 
     expect(started).toContain('db')

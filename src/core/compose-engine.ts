@@ -1,5 +1,15 @@
 import { ofetch } from 'ofetch'
+import { warn } from '../utils/output'
 import type { ServiceConfig } from './config'
+import {
+  type PortlessDecision,
+  isPortlessAvailable,
+  isPortlessEnabled,
+  isPortlessExplicit,
+  portlessHealthUrl,
+  resolvePortlessMode,
+  wrapCommand,
+} from './portless'
 import { isProcessAlive, startProcess, stopProcess } from './process-manager'
 import { getSessionId } from './session'
 import { interpolate, runSetup } from './setup-hooks'
@@ -76,10 +86,23 @@ export function resolveDependencyOrder(
 
 export async function composeUp(
   services: Record<string, ServiceConfig>,
-  opts: { only?: string[]; skip?: string[]; noHealth?: boolean },
+  opts: { only?: string[]; skip?: string[]; noHealth?: boolean; portless?: boolean },
 ): Promise<string[]> {
   const order = resolveDependencyOrder(services, opts.only, opts.skip)
   const started: string[] = []
+
+  // Resolve portless once per run (default ON, graceful when the binary is absent).
+  let portless: PortlessDecision = { mode: 'fallback' }
+  if (isPortlessEnabled({ config: opts.portless, env: process.env })) {
+    const available = await isPortlessAvailable()
+    portless = resolvePortlessMode({
+      enabled: true,
+      available,
+      explicit: isPortlessExplicit(process.env),
+    })
+    if (portless.mode === 'error') throw new Error(portless.reason)
+    if (portless.mode === 'fallback' && portless.reason) warn(portless.reason)
+  }
 
   for (const name of order) {
     const svc = services[name]!
@@ -90,7 +113,8 @@ export async function composeUp(
       SESSION: getSessionId(),
       PORT: svc.port !== undefined ? String(svc.port) : '',
     }
-    const cmd = interpolate(svc.cmd, vars)
+    const baseCmd = interpolate(svc.cmd, vars)
+    const cmd = portless.mode === 'use' ? wrapCommand(name, baseCmd) : baseCmd
     const env = svc.env
       ? Object.fromEntries(Object.entries(svc.env).map(([k, v]) => [k, interpolate(v, vars)]))
       : undefined
@@ -127,9 +151,14 @@ export async function composeUp(
     started.push(name)
 
     if (!opts.noHealth && svc.health) {
-      const healthUrl = svc.health.startsWith('http')
-        ? svc.health
-        : `http://localhost:${svc.port ?? 3000}${svc.health}`
+      // When portless manages the port, the service is served at its *.localhost
+      // URL rather than localhost:<port>. (best-effort — verify with real portless)
+      const healthUrl =
+        portless.mode === 'use'
+          ? portlessHealthUrl(name, svc.health)
+          : svc.health.startsWith('http')
+            ? svc.health
+            : `http://localhost:${svc.port ?? 3000}${svc.health}`
 
       await waitForHealth(healthUrl, svc.timeout ?? 30_000)
     }

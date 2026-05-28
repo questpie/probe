@@ -98,7 +98,10 @@ describe('composeUp integration', () => {
       'shared',
     )
 
-    await composeUp({ db: { cmd: 'noop', shared: true, setup: ['true'] } }, { noHealth: true })
+    await composeUp(
+      { db: { cmd: 'noop', shared: true, setup: ['true'] } },
+      { noHealth: true, portless: false },
+    )
     expect(await hasRunSetup('db', 'shared')).toBe(true)
   })
 })
