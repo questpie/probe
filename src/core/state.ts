@@ -1,10 +1,6 @@
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-
-const BASE_DIR = 'tmp/qprobe'
-const PIDS_DIR = join(BASE_DIR, 'pids')
-const STATE_DIR = join(BASE_DIR, 'state')
-const LOGS_DIR = join(BASE_DIR, 'logs')
+import { currentSessionPaths } from './session'
 
 export interface ProcessState {
   name: string
@@ -18,26 +14,41 @@ export interface ProcessState {
   startedAt: string
 }
 
+// Runtime dirs are resolved per call (not at module load) so QPROBE_SESSION /
+// QPROBE_ROOT_DIR take effect for the current CLI invocation.
+function pidsDir(): string {
+  return currentSessionPaths().pids
+}
+
+function stateDir(): string {
+  return currentSessionPaths().state
+}
+
+function logsDir(): string {
+  return currentSessionPaths().logs
+}
+
 async function ensureDir(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true })
 }
 
 export function getLogsDir(): string {
-  return LOGS_DIR
+  return logsDir()
 }
 
 export function getLogPath(name: string): string {
-  return join(LOGS_DIR, `${name}.log`)
+  return join(logsDir(), `${name}.log`)
 }
 
 export async function savePid(name: string, pid: number): Promise<void> {
-  await ensureDir(PIDS_DIR)
-  await writeFile(join(PIDS_DIR, `${name}.pid`), String(pid), 'utf-8')
+  const dir = pidsDir()
+  await ensureDir(dir)
+  await writeFile(join(dir, `${name}.pid`), String(pid), 'utf-8')
 }
 
 export async function readPid(name: string): Promise<number | null> {
   try {
-    const content = await readFile(join(PIDS_DIR, `${name}.pid`), 'utf-8')
+    const content = await readFile(join(pidsDir(), `${name}.pid`), 'utf-8')
     return Number.parseInt(content.trim(), 10)
   } catch {
     return null
@@ -46,20 +57,21 @@ export async function readPid(name: string): Promise<number | null> {
 
 export async function removePid(name: string): Promise<void> {
   try {
-    await rm(join(PIDS_DIR, `${name}.pid`))
+    await rm(join(pidsDir(), `${name}.pid`))
   } catch {
     // ignore
   }
 }
 
 export async function saveState(name: string, state: ProcessState): Promise<void> {
-  await ensureDir(STATE_DIR)
-  await writeFile(join(STATE_DIR, `${name}.json`), JSON.stringify(state, null, 2), 'utf-8')
+  const dir = stateDir()
+  await ensureDir(dir)
+  await writeFile(join(dir, `${name}.json`), JSON.stringify(state, null, 2), 'utf-8')
 }
 
 export async function readState(name: string): Promise<ProcessState | null> {
   try {
-    const content = await readFile(join(STATE_DIR, `${name}.json`), 'utf-8')
+    const content = await readFile(join(stateDir(), `${name}.json`), 'utf-8')
     return JSON.parse(content) as ProcessState
   } catch {
     return null
@@ -68,7 +80,7 @@ export async function readState(name: string): Promise<ProcessState | null> {
 
 export async function removeState(name: string): Promise<void> {
   try {
-    await rm(join(STATE_DIR, `${name}.json`))
+    await rm(join(stateDir(), `${name}.json`))
   } catch {
     // ignore
   }
@@ -76,7 +88,7 @@ export async function removeState(name: string): Promise<void> {
 
 export async function listProcessNames(): Promise<string[]> {
   try {
-    const files = await readdir(PIDS_DIR)
+    const files = await readdir(pidsDir())
     return files.filter((f) => f.endsWith('.pid')).map((f) => f.replace('.pid', ''))
   } catch {
     return []
@@ -84,5 +96,5 @@ export async function listProcessNames(): Promise<string[]> {
 }
 
 export async function ensureLogsDir(): Promise<void> {
-  await ensureDir(LOGS_DIR)
+  await ensureDir(logsDir())
 }
