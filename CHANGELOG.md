@@ -1,5 +1,11 @@
 # @questpie/probe
 
+## 0.2.1
+
+### Patch Changes
+
+- [`3d026ee`](https://github.com/questpie/probe/commit/3d026ee7bade2b7214aa2cedd77c45bd4c21757d) Thanks [@drepkovsky](https://github.com/drepkovsky)! - Fix child process dying after ready detection — pipe stdout/stderr to log file instead of destroying streams (prevents SIGPIPE kill on macOS)
+
 ## 0.2.0
 
 ### Minor Changes
