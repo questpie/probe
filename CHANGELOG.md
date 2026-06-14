@@ -1,5 +1,11 @@
 # @questpie/probe
 
+## 0.4.0
+
+### Minor Changes
+
+- [#4](https://github.com/questpie/probe/pull/4) [`0bfb748`](https://github.com/questpie/probe/commit/0bfb748f767428415d9450db1d776d247038099b) Thanks [@drepkovsky](https://github.com/drepkovsky)! - Add `qprobe design <url>` — measure the rendered UI for layout and design-token defects, deterministically and without a vision model. Launches headless Chromium, and for each `--viewport` runs a DOM geometry scan (overflow, truncation, collapse, sibling overlap, near-miss misalignment, tap targets, sub-16px input fonts) plus a CSS-variable token-conformance scan (off-palette colors, off-token box-shadows, off-token border-radii), printing JSON findings. The scanners are shared verbatim with the agent-board `agent-board-design-qa` skill.
+
 ## 0.3.0
 
 ### Minor Changes
